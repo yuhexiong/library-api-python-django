@@ -73,11 +73,11 @@ WSGI_APPLICATION = 'library.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'HOST': '127.0.0.1',  # db ip
-        'PORT': 3306,  # db post
-        'USER': 'root',  # db user
-        'PASSWORD': 'test',  # db password
-        'NAME': 'library'  # db name
+        'HOST': '',  # db ip
+        'PORT': '',  # db post
+        'USER': '',  # db user
+        'PASSWORD': '',  # db password
+        'NAME': ''  # db name
     }
 }
 

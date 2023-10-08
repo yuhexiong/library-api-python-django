@@ -47,4 +47,8 @@ urlpatterns = [
     path('report', views.createAndGetReport, name="createAndGetReport"),
     path('report/<str:reportId>', views.updateAndDeleteReport, name="updateAndDeleteReport"),
 
+    # 排名
+    path('rank/borrowTimes', views.getRankOfBorrowTimes, name="getRankOfBorrowTimes"),
+    path('rank/violationTimes', views.getRankOfViolationTimes, name="getRankOfViolationTimes"),
+    path('rank/publishTimes', views.getRankOfPublishTimes, name="getRankOfPublishTimes"),
 ]

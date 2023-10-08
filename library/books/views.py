@@ -323,7 +323,7 @@ def returnBook(request, bookId, readerId):  # 續借
         currentDateTime = now.strftime("%Y-%m-%d %H:%M:%S")
 
         borrow = Borrow.objects.get(book_id=bookId, reader_id=readerId, status=0)
-        if borrow.borrowAt+timedelta(days=borrow.times*BorrowDays) < now:  # 逾期還書
+        if borrow.borrowAt + timedelta(days=borrow.times*BorrowDays) < now:  # 逾期還書
             reader = Reader.objects.get(id=readerId)
             Reader.objects.filter(id=readerId).update(updateAt=currentDateTime, violationTimes=reader.violationTimes+1)
 
@@ -395,5 +395,29 @@ def updateAndDeleteReport(request, reportId):
 
         Report.objects.filter(id=reportId).update(updateAt=currentDateTime, status=9)
         return JsonResponse(data={'message': f'reportId {reportId} deleted'}, safe=False)
+    else:
+        return HttpResponseBadRequest('Invalid api')
+
+
+def getRankOfBorrowTimes(request):
+    if request.method == 'GET':  # 取得讀者借書次數排名
+        readers = list(Reader.objects.all().order_by('-borrowTimes').values())
+        return JsonResponse(data={'readers': readers}, safe=True)
+    else:
+        return HttpResponseBadRequest('Invalid api')
+
+
+def getRankOfViolationTimes(request):
+    if request.method == 'GET':  # 取得讀者違規次數排名
+        readers = list(Reader.objects.all().order_by('-violationTimes').values())
+        return JsonResponse(data={'readers': readers}, safe=True)
+    else:
+        return HttpResponseBadRequest('Invalid api')
+
+
+def getRankOfPublishTimes(request):
+    if request.method == 'GET':  # 取得作者出版次數排名
+        authors = list(Author.objects.all().order_by('-publishTimes').values())
+        return JsonResponse(data={'authors': authors}, safe=True)
     else:
         return HttpResponseBadRequest('Invalid api')

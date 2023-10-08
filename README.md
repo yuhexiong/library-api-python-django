@@ -69,6 +69,12 @@ python library/manage.py runserver
 - PATCH /report : 更新心得內文
 - DELETE /report/{reportId} : 停用心得
 
+### rank
+
+- POST /rank/borrowTimes : 取得讀者借書次數排名
+- POST /rank/violationTimes : 取得讀者違規次數排名
+- POST /rank/publishTimes : 取得作者出版次數排名
+
 ## Reference
 
 - [Lemon-412: Library-System](https://github.com/Lemon-412/Library-System)
