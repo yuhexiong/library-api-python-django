@@ -30,4 +30,8 @@ urlpatterns = [
     path('reader', views.createAndGetReader, name="createAndGetReader"),
     path('reader/<str:readerId>', views.deleteReader, name="deleteReader"),
 
+    # 書本類型
+    path('bookType', views.createAndGetBookType, name="createAndGetBookType"),
+    path('bookType/<str:bookTypeId>', views.deleteBookType, name="deleteBookType"),
+
 ]

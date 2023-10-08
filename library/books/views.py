@@ -4,7 +4,7 @@ from django.http import HttpResponseBadRequest, JsonResponse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 
-from .models import Author, Reader, User
+from .models import Author, BookType, Reader, User
 
 
 @csrf_exempt
@@ -155,6 +155,49 @@ def deleteReader(request, readerId):
             updateAt=currentDateTime, status=9)
 
         return JsonResponse(data={'message': f'readerId {readerId} deleted'}, safe=False)
+
+    else:
+        return HttpResponseBadRequest('Invalid api')
+
+
+@csrf_exempt
+def createAndGetBookType(request):  # 新增書本類型
+    if request.method == 'POST':
+        body = json.loads(request.body)
+        name = body.get('name')
+
+        now = timezone.now()
+        currentDateTime = now.strftime("%Y-%m-%d %H:%M:%S")
+
+        if not name:
+            return HttpResponseBadRequest('should provide name')
+
+        newBookType = BookType(
+            createAt=currentDateTime,
+            updateAt=currentDateTime,
+            status=0,
+            name=name,
+        )
+        newBookType.save()
+
+        return JsonResponse(data={'id': newBookType.id}, safe=True)
+    elif request.method == 'GET':  # 取得所有書本類型
+        bookTypes = list(BookType.objects.filter(status=0).values())
+        return JsonResponse(data={'bookTypes': bookTypes}, safe=False)
+    else:
+        return HttpResponseBadRequest('Invalid api')
+
+
+@csrf_exempt
+def deleteBookType(request, bookTypeId):
+    if request.method == 'DELETE':  # 刪除書本類型
+        now = timezone.now()
+        currentDateTime = now.strftime("%Y-%m-%d %H:%M:%S")
+
+        BookType.objects.filter(id=bookTypeId).update(
+            updateAt=currentDateTime, status=9)
+
+        return JsonResponse(data={'message': f'bookTypeId {bookTypeId} deleted'}, safe=False)
 
     else:
         return HttpResponseBadRequest('Invalid api')
