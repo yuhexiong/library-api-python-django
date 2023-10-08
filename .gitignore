@@ -1,0 +1,4 @@
+library/books/__pycache__/
+library/library/__pycache__/
+library/books/migrations/__pycache__/
+.vscode/
