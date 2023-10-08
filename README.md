@@ -62,6 +62,13 @@ python library/manage.py runserver
 - POST /renew/{bookId}/{readerId} : 續借
 - POST /return/{bookId}/{readerId} : 還書, 超時會被記錄違規次數
 
+### report
+
+- POST /report : 新增心得
+- GET /report : 取得所有生效的心得
+- PATCH /report : 更新心得內文
+- DELETE /report/{reportId} : 停用心得
+
 ## Reference
 
 - [Lemon-412: Library-System](https://github.com/Lemon-412/Library-System)

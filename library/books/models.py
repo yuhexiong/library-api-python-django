@@ -91,7 +91,7 @@ class Report(models.Model):  # 心得
     updateAt = models.DateTimeField()  # 更新時間
     status = models.IntegerField(choices=STATUS)  # 狀態
     book = models.ForeignKey(Book, on_delete=models.RESTRICT)  # 書本
-    read = models.ForeignKey(Reader, on_delete=models.RESTRICT)  # 讀者
+    reader = models.ForeignKey(Reader, on_delete=models.RESTRICT)  # 讀者
     content = models.CharField(max_length=3000)  # 內文
 
     class Meta:

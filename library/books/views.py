@@ -5,7 +5,7 @@ from django.http import HttpResponseBadRequest, JsonResponse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 
-from .models import Author, Book, BookType, Borrow, Reader, User
+from .models import Author, Book, BookType, Borrow, Reader, Report, User
 
 maxBorrowTimes = 3  # 最多續借2次
 BorrowDays = 30  # 一次借書30天
@@ -330,5 +330,70 @@ def returnBook(request, bookId, readerId):  # 續借
         Borrow.objects.filter(id=borrow.id).update(updateAt=currentDateTime, returnAt=currentDateTime, status=9)
 
         return JsonResponse(data={'message': 'book return successful'}, safe=True)
+    else:
+        return HttpResponseBadRequest('Invalid api')
+
+
+@csrf_exempt
+def createAndGetReport(request):
+    if request.method == 'POST':  # 新增心得
+        body = json.loads(request.body)
+        bookId = body.get('bookId')
+        readerId = body.get('readerId')
+        content = body.get('content')
+
+        now = timezone.now()
+        currentDateTime = now.strftime("%Y-%m-%d %H:%M:%S")
+
+        if not bookId:
+            return HttpResponseBadRequest('should provide bookId')
+
+        if not readerId:
+            return HttpResponseBadRequest('should provide readerId')
+
+        if not content:
+            return HttpResponseBadRequest('should provide content')
+
+        book = Book.objects.get(id=bookId)
+        reader = Reader.objects.get(id=readerId)
+
+        newReport = Report(
+            createAt=currentDateTime,
+            updateAt=currentDateTime,
+            status=0,
+            book=book,
+            reader=reader,
+            content=content
+        )
+        newReport.save()
+
+        return JsonResponse(data={'id': newReport.id}, safe=True)
+    elif request.method == 'GET':  # 取得所有心得
+        reports = list(Report.objects.filter(status=0).values())
+        return JsonResponse(data={'reports': reports}, safe=False)
+    else:
+        return HttpResponseBadRequest('Invalid api')
+
+
+@csrf_exempt
+def updateAndDeleteReport(request, reportId):
+    if request.method == 'PATCH':  # 刪除心得
+        body = json.loads(request.body)
+        content = body.get('content')
+
+        now = timezone.now()
+        currentDateTime = now.strftime("%Y-%m-%d %H:%M:%S")
+
+        if not content:
+            return HttpResponseBadRequest('should provide content')
+
+        Report.objects.filter(id=reportId).update(updateAt=currentDateTime, content=content)
+        return JsonResponse(data={'message': f'reportId {reportId} updated'}, safe=False)
+    elif request.method == 'DELETE':  # 刪除心得
+        now = timezone.now()
+        currentDateTime = now.strftime("%Y-%m-%d %H:%M:%S")
+
+        Report.objects.filter(id=reportId).update(updateAt=currentDateTime, status=9)
+        return JsonResponse(data={'message': f'reportId {reportId} deleted'}, safe=False)
     else:
         return HttpResponseBadRequest('Invalid api')

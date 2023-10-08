@@ -43,4 +43,8 @@ urlpatterns = [
     path('renew/<str:bookId>/<str:readerId>', views.renewBook, name="renewBook"),
     path('return/<str:bookId>/<str:readerId>', views.returnBook, name="returnBook"),
 
+    # 心得
+    path('report', views.createAndGetReport, name="createAndGetReport"),
+    path('report/<str:reportId>', views.updateAndDeleteReport, name="updateAndDeleteReport"),
+
 ]
