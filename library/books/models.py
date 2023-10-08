@@ -76,9 +76,9 @@ class Borrow(models.Model):  # 借書紀錄
     updateAt = models.DateTimeField()  # 更新時間
     status = models.IntegerField(choices=STATUS)  # 狀態
     book = models.ForeignKey(Book, on_delete=models.RESTRICT)  # 書本
-    read = models.ForeignKey(Reader, on_delete=models.RESTRICT)  # 讀者
+    reader = models.ForeignKey(Reader, on_delete=models.RESTRICT)  # 讀者
     borrowAt = models.DateTimeField()  # 借出時間
-    returnAt = models.DateTimeField()  # 歸還時間
+    returnAt = models.DateTimeField(null=True)  # 歸還時間
     times = models.IntegerField()  # 借出次數
 
     class Meta:

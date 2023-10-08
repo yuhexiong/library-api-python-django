@@ -34,4 +34,13 @@ urlpatterns = [
     path('bookType', views.createAndGetBookType, name="createAndGetBookType"),
     path('bookType/<str:bookTypeId>', views.deleteBookType, name="deleteBookType"),
 
+    # 書本
+    path('book', views.createAndGetBook, name="createAndGetBook"),
+    path('book/<str:bookId>', views.deleteBook, name="deleteBook"),
+
+    # 借書 續借 還書
+    path('borrow/<str:bookId>/<str:readerId>', views.borrowBook, name="borrowBook"),
+    path('renew/<str:bookId>/<str:readerId>', views.renewBook, name="renewBook"),
+    path('return/<str:bookId>/<str:readerId>', views.returnBook, name="returnBook"),
+
 ]

@@ -1,10 +1,14 @@
+from datetime import timedelta
 import json
 
 from django.http import HttpResponseBadRequest, JsonResponse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 
-from .models import Author, BookType, Reader, User
+from .models import Author, Book, BookType, Borrow, Reader, User
+
+maxBorrowTimes = 3  # 最多續借2次
+BorrowDays = 30  # 一次借書30天
 
 
 @csrf_exempt
@@ -42,12 +46,9 @@ def deleteUser(request, userId):
         now = timezone.now()
         currentDateTime = now.strftime("%Y-%m-%d %H:%M:%S")
 
-        User.objects.filter(id=userId).update(
-            updateAt=currentDateTime, status=9)
-        Author.objects.filter(user_id=userId).update(
-            updateAt=currentDateTime, status=9)
-        Reader.objects.filter(user_id=userId).update(
-            updateAt=currentDateTime, status=9)
+        User.objects.filter(id=userId).update(updateAt=currentDateTime, status=9)
+        Author.objects.filter(user_id=userId).update(updateAt=currentDateTime, status=9)
+        Reader.objects.filter(user_id=userId).update(updateAt=currentDateTime, status=9)
 
         return JsonResponse(data={'message': f'userId {userId} deleted'}, safe=False)
 
@@ -98,9 +99,7 @@ def deleteAuthor(request, authorId):
         now = timezone.now()
         currentDateTime = now.strftime("%Y-%m-%d %H:%M:%S")
 
-        Author.objects.filter(id=authorId).update(
-            updateAt=currentDateTime, status=9)
-
+        Author.objects.filter(id=authorId).update(updateAt=currentDateTime, status=9)
         return JsonResponse(data={'message': f'authorId {authorId} deleted'}, safe=False)
 
     else:
@@ -151,9 +150,7 @@ def deleteReader(request, readerId):
         now = timezone.now()
         currentDateTime = now.strftime("%Y-%m-%d %H:%M:%S")
 
-        Reader.objects.filter(id=readerId).update(
-            updateAt=currentDateTime, status=9)
-
+        Reader.objects.filter(id=readerId).update(updateAt=currentDateTime, status=9)
         return JsonResponse(data={'message': f'readerId {readerId} deleted'}, safe=False)
 
     else:
@@ -194,10 +191,144 @@ def deleteBookType(request, bookTypeId):
         now = timezone.now()
         currentDateTime = now.strftime("%Y-%m-%d %H:%M:%S")
 
-        BookType.objects.filter(id=bookTypeId).update(
-            updateAt=currentDateTime, status=9)
-
+        BookType.objects.filter(id=bookTypeId).update(updateAt=currentDateTime, status=9)
         return JsonResponse(data={'message': f'bookTypeId {bookTypeId} deleted'}, safe=False)
 
+    else:
+        return HttpResponseBadRequest('Invalid api')
+
+
+@csrf_exempt
+def createAndGetBook(request):  # 新增書本
+    if request.method == 'POST':
+        body = json.loads(request.body)
+        name = body.get('name')
+        bookTypeId = body.get('bookTypeId')
+        publishAt = body.get('publishAt')
+        authorId = body.get('authorId')
+        location = body.get('location')
+
+        now = timezone.now()
+        currentDateTime = now.strftime("%Y-%m-%d %H:%M:%S")
+
+        if not name:
+            return HttpResponseBadRequest('should provide name')
+
+        if not bookTypeId:
+            return HttpResponseBadRequest('should provide bookTypeId')
+
+        if not publishAt:
+            return HttpResponseBadRequest('should provide publishAt')
+
+        if not authorId:
+            return HttpResponseBadRequest('should provide authorId')
+
+        if not location:
+            return HttpResponseBadRequest('should provide location')
+
+        bookType = BookType.objects.get(id=bookTypeId)
+        author = Author.objects.get(id=authorId)
+
+        Author.objects.filter(id=authorId).update(updateAt=currentDateTime, publishTimes=author.publishTimes+1)
+
+        newBook = Book(
+            createAt=currentDateTime,
+            updateAt=currentDateTime,
+            status=0,
+            name=name,
+            bookType=bookType,
+            publishAt=publishAt,
+            author=author,
+            location=location,
+        )
+        newBook.save()
+
+        return JsonResponse(data={'id': newBook.id}, safe=True)
+    elif request.method == 'GET':  # 取得所有書本
+        books = list(Book.objects.filter(status=0).values())
+        return JsonResponse(data={'books': books}, safe=False)
+    else:
+        return HttpResponseBadRequest('Invalid api')
+
+
+@csrf_exempt
+def deleteBook(request, bookId):
+    if request.method == 'DELETE':  # 刪除書本
+        now = timezone.now()
+        currentDateTime = now.strftime("%Y-%m-%d %H:%M:%S")
+
+        book = Book.objects.get(id=bookId)
+
+        Author.objects.filter(id=book.author.id).update(updateAt=currentDateTime, publishTimes=book.author.publishTimes-1)
+        Book.objects.filter(id=bookId).update(updateAt=currentDateTime, status=9)
+
+        return JsonResponse(data={'message': f'bookId {bookId} deleted'}, safe=False)
+
+    else:
+        return HttpResponseBadRequest('Invalid api')
+
+
+@csrf_exempt
+def borrowBook(request, bookId, readerId):  # 借書
+    if request.method == 'POST':
+
+        now = timezone.now()
+        currentDateTime = now.strftime("%Y-%m-%d %H:%M:%S")
+
+        book = Book.objects.get(id=bookId, status=0)
+        reader = Reader.objects.get(id=readerId)
+
+        Book.objects.filter(id=readerId).update(updateAt=currentDateTime, status=1)
+        Reader.objects.filter(id=readerId).update(updateAt=currentDateTime, borrowTimes=reader.borrowTimes+1)
+
+        newBorrow = Borrow(
+            createAt=currentDateTime,
+            updateAt=currentDateTime,
+            status=0,
+            book=book,
+            reader=reader,
+            borrowAt=currentDateTime,
+            times=1,
+        )
+        newBorrow.save()
+
+        return JsonResponse(data={'id': newBorrow.id}, safe=True)
+    else:
+        return HttpResponseBadRequest('Invalid api')
+
+
+@csrf_exempt
+def renewBook(request, bookId, readerId):  # 續借
+    if request.method == 'POST':
+
+        now = timezone.now()
+        currentDateTime = now.strftime("%Y-%m-%d %H:%M:%S")
+
+        borrow = Borrow.objects.get(book_id=bookId, reader_id=readerId, status=0)
+        if borrow.times >= maxBorrowTimes:
+            return HttpResponseBadRequest('Can not borrow it any more.')
+
+        Borrow.objects.filter(id=borrow.id).update(updateAt=currentDateTime, times=borrow.times+1)
+
+        return JsonResponse(data={'message': 'book renewal successful'}, safe=True)
+    else:
+        return HttpResponseBadRequest('Invalid api')
+
+
+@csrf_exempt
+def returnBook(request, bookId, readerId):  # 續借
+    if request.method == 'POST':
+
+        now = timezone.now()
+        currentDateTime = now.strftime("%Y-%m-%d %H:%M:%S")
+
+        borrow = Borrow.objects.get(book_id=bookId, reader_id=readerId, status=0)
+        if borrow.borrowAt+timedelta(days=borrow.times*BorrowDays) < now:  # 逾期還書
+            reader = Reader.objects.get(id=readerId)
+            Reader.objects.filter(id=readerId).update(updateAt=currentDateTime, violationTimes=reader.violationTimes+1)
+
+        Borrow.objects.filter(id=borrow.id).update(updateAt=currentDateTime, returnAt=currentDateTime, status=9)
+
+        return JsonResponse(data={'message': 'book return successful'}, safe=True)
     else:
         return HttpResponseBadRequest('Invalid api')
