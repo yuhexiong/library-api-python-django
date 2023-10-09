@@ -1,14 +1,24 @@
 from datetime import timedelta
 import json
 
-from django.http import HttpResponseBadRequest, JsonResponse
+from django.http import JsonResponse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
+from django.core.exceptions import ObjectDoesNotExist
 
+from enum import Enum
 from .models import Author, Book, BookType, Borrow, Reader, Report, User
 
 maxBorrowTimes = 3  # 最多續借2次
 BorrowDays = 30  # 一次借書30天
+
+# error code
+class LibraryError(Enum):
+    SUCCESSFUL = 0
+    INVALID_API = 117
+    INVALID_PARAMETER = 118
+    INSUFFICIENT_PARAMETER = 119
+    OVER_BORROW_TIMES_LIMIT = 120
 
 
 @csrf_exempt
@@ -17,11 +27,11 @@ def createAndGetUser(request):
         body = json.loads(request.body)
         name = body.get('name')
 
+        if not name:
+            return JsonResponse({'code': LibraryError.INSUFFICIENT_PARAMETER.value, 'message': 'should provide name'})
+
         now = timezone.now()
         currentDateTime = now.strftime("%Y-%m-%d %H:%M:%S")
-
-        if not name:
-            return HttpResponseBadRequest('should provide name')
 
         newUser = User(
             createAt=currentDateTime,
@@ -31,13 +41,14 @@ def createAndGetUser(request):
         )
         newUser.save()
 
-        return JsonResponse(data={'id': newUser.id}, safe=False)
+        return JsonResponse({'code': LibraryError.SUCCESSFUL.value, 'result': {'id': newUser.id}}, safe=False)
+
     elif request.method == 'GET':  # 取得所有使用者
         users = list(User.objects.filter(status=0).values())
-        return JsonResponse(data={'users': users}, safe=False)
+        return JsonResponse({'code': LibraryError.SUCCESSFUL.value, 'result': {'users': users}}, safe=False)
 
     else:
-        return HttpResponseBadRequest('Invalid api')
+        return JsonResponse({'code': LibraryError.INVALID_API.value, 'message': 'Invalid api'})
 
 
 @csrf_exempt
@@ -50,10 +61,10 @@ def deleteUser(request, userId):
         Author.objects.filter(user_id=userId).update(updateAt=currentDateTime, status=9)
         Reader.objects.filter(user_id=userId).update(updateAt=currentDateTime, status=9)
 
-        return JsonResponse(data={'message': f'userId {userId} deleted'}, safe=False)
+        return JsonResponse({'code': LibraryError.SUCCESSFUL.value, 'message': f'userId {userId} deleted'}, safe=False)
 
     else:
-        return HttpResponseBadRequest('Invalid api')
+        return JsonResponse({'code': LibraryError.INVALID_API.value, 'message': 'Invalid api'})
 
 
 @csrf_exempt
@@ -67,7 +78,7 @@ def createAndGetAuthor(request):
         currentDateTime = now.strftime("%Y-%m-%d %H:%M:%S")
 
         if not userId and not name:
-            return HttpResponseBadRequest('should provide userId or name')
+            return JsonResponse({'code': LibraryError.INSUFFICIENT_PARAMETER.value, 'message': 'should provide userId or name'})
 
         if userId:
             pass
@@ -75,7 +86,11 @@ def createAndGetAuthor(request):
             InsertUserResult = createAndGetUser(request)
             userId = json.loads(InsertUserResult.content.decode("utf-8"))["id"]
 
-        user = User.objects.get(id=userId)
+        try:
+            user = User.objects.get(id=userId, status=0)
+        except ObjectDoesNotExist:
+            return JsonResponse({'code': LibraryError.INVALID_PARAMETER.value, 'error': f"userId {userId} not found"})
+        
         newAuthor = Author(
             createAt=currentDateTime,
             updateAt=currentDateTime,
@@ -84,13 +99,14 @@ def createAndGetAuthor(request):
             publishTimes=0
         )
         newAuthor.save()
+        return JsonResponse({'code': LibraryError.SUCCESSFUL.value, 'result': {'id': newAuthor.id }}, safe=False)
 
-        return JsonResponse(data={'id': newAuthor.id}, safe=True)
     elif request.method == 'GET':  # 取得所有作者
         authors = list(Author.objects.filter(status=0).values())
-        return JsonResponse(data={'authors': authors}, safe=False)
+        return JsonResponse({'code': LibraryError.SUCCESSFUL.value, 'result': {'authors': authors }}, safe=False)
+
     else:
-        return HttpResponseBadRequest('Invalid api')
+        return JsonResponse({'code': LibraryError.INVALID_API.value, 'message': 'Invalid api'})
 
 
 @csrf_exempt
@@ -100,10 +116,10 @@ def deleteAuthor(request, authorId):
         currentDateTime = now.strftime("%Y-%m-%d %H:%M:%S")
 
         Author.objects.filter(id=authorId).update(updateAt=currentDateTime, status=9)
-        return JsonResponse(data={'message': f'authorId {authorId} deleted'}, safe=False)
+        return JsonResponse({'code': LibraryError.SUCCESSFUL.value, 'message': f'authorId {authorId} deleted'}, safe=False)
 
     else:
-        return HttpResponseBadRequest('Invalid api')
+        return JsonResponse({'code': LibraryError.INVALID_API.value, 'message': 'Invalid api'})
 
 
 @csrf_exempt
@@ -117,7 +133,7 @@ def createAndGetReader(request):  # 新增讀者
         currentDateTime = now.strftime("%Y-%m-%d %H:%M:%S")
 
         if not userId and not name:
-            return HttpResponseBadRequest('should provide userId or name')
+            return JsonResponse({'code': LibraryError.INSUFFICIENT_PARAMETER.value, 'message': 'should provide userId or name'})
 
         if userId:
             pass
@@ -125,7 +141,11 @@ def createAndGetReader(request):  # 新增讀者
             InsertUserResult = createAndGetUser(request)
             userId = json.loads(InsertUserResult.content.decode("utf-8"))["id"]
 
-        user = User.objects.get(id=userId)
+        try:
+            user = User.objects.get(id=userId, status=0)
+        except ObjectDoesNotExist:
+            return JsonResponse({'code': LibraryError.INVALID_PARAMETER.value, 'error': f"userId {userId} not found"})
+
         newReader = Reader(
             createAt=currentDateTime,
             updateAt=currentDateTime,
@@ -135,13 +155,14 @@ def createAndGetReader(request):  # 新增讀者
             violationTimes=0,
         )
         newReader.save()
+        return JsonResponse({'code': LibraryError.SUCCESSFUL.value, 'result': {'id': newReader.id }}, safe=False)
 
-        return JsonResponse(data={'id': newReader.id}, safe=True)
     elif request.method == 'GET':  # 取得所有讀者
         readers = list(Reader.objects.filter(status=0).values())
-        return JsonResponse(data={'readers': readers}, safe=False)
+        return JsonResponse({'code': LibraryError.SUCCESSFUL.value, 'result': {'readers': readers }}, safe=False)
+
     else:
-        return HttpResponseBadRequest('Invalid api')
+        return JsonResponse({'code': LibraryError.INVALID_API.value, 'message': 'Invalid api'})
 
 
 @csrf_exempt
@@ -151,10 +172,10 @@ def deleteReader(request, readerId):
         currentDateTime = now.strftime("%Y-%m-%d %H:%M:%S")
 
         Reader.objects.filter(id=readerId).update(updateAt=currentDateTime, status=9)
-        return JsonResponse(data={'message': f'readerId {readerId} deleted'}, safe=False)
+        return JsonResponse({'code': LibraryError.SUCCESSFUL.value, 'message': f'readerId {readerId} deleted'}, safe=False)
 
     else:
-        return HttpResponseBadRequest('Invalid api')
+        return JsonResponse({'code': LibraryError.INVALID_API.value, 'message': 'Invalid api'})
 
 
 @csrf_exempt
@@ -167,7 +188,7 @@ def createAndGetBookType(request):  # 新增書本類型
         currentDateTime = now.strftime("%Y-%m-%d %H:%M:%S")
 
         if not name:
-            return HttpResponseBadRequest('should provide name')
+            return JsonResponse({'code': LibraryError.INSUFFICIENT_PARAMETER.value, 'message': 'should provide name'})
 
         newBookType = BookType(
             createAt=currentDateTime,
@@ -177,12 +198,14 @@ def createAndGetBookType(request):  # 新增書本類型
         )
         newBookType.save()
 
-        return JsonResponse(data={'id': newBookType.id}, safe=True)
+        return JsonResponse({'code': LibraryError.SUCCESSFUL.value, 'result': {'id': newBookType.id }}, safe=False)
+
     elif request.method == 'GET':  # 取得所有書本類型
         bookTypes = list(BookType.objects.filter(status=0).values())
-        return JsonResponse(data={'bookTypes': bookTypes}, safe=False)
+        return JsonResponse({'code': LibraryError.SUCCESSFUL.value, 'result': {'bookTypes': bookTypes }}, safe=False)
+
     else:
-        return HttpResponseBadRequest('Invalid api')
+        return JsonResponse({'code': LibraryError.INVALID_API.value, 'message': 'Invalid api'})
 
 
 @csrf_exempt
@@ -192,10 +215,10 @@ def deleteBookType(request, bookTypeId):
         currentDateTime = now.strftime("%Y-%m-%d %H:%M:%S")
 
         BookType.objects.filter(id=bookTypeId).update(updateAt=currentDateTime, status=9)
-        return JsonResponse(data={'message': f'bookTypeId {bookTypeId} deleted'}, safe=False)
+        return JsonResponse({'code': LibraryError.SUCCESSFUL.value, 'message': f'bookTypeId {bookTypeId} deleted'}, safe=False)
 
     else:
-        return HttpResponseBadRequest('Invalid api')
+        return JsonResponse({'code': LibraryError.INVALID_API.value, 'message': 'Invalid api'})
 
 
 @csrf_exempt
@@ -208,26 +231,33 @@ def createAndGetBook(request):  # 新增書本
         authorId = body.get('authorId')
         location = body.get('location')
 
+        if not name:
+            return JsonResponse({'code': LibraryError.INSUFFICIENT_PARAMETER.value, 'message': 'should provide name'})
+
+        if not bookTypeId:
+            return JsonResponse({'code': LibraryError.INSUFFICIENT_PARAMETER.value, 'message': 'should provide bookTypeId'})
+
+        if not publishAt:
+            return JsonResponse({'code': LibraryError.INSUFFICIENT_PARAMETER.value, 'message': 'should provide publishAt'})
+
+        if not authorId:
+            return JsonResponse({'code': LibraryError.INSUFFICIENT_PARAMETER.value, 'message': 'should provide authorId'})
+
+        if not location:
+            return JsonResponse({'code': LibraryError.INSUFFICIENT_PARAMETER.value, 'message': 'should provide location'})
+
         now = timezone.now()
         currentDateTime = now.strftime("%Y-%m-%d %H:%M:%S")
 
-        if not name:
-            return HttpResponseBadRequest('should provide name')
+        try:
+            bookType = BookType.objects.get(id=bookTypeId, status=0)
+        except ObjectDoesNotExist:
+            return JsonResponse({'code': LibraryError.INVALID_PARAMETER.value, 'error': f"bookTypeId {bookTypeId} not found"})
 
-        if not bookTypeId:
-            return HttpResponseBadRequest('should provide bookTypeId')
-
-        if not publishAt:
-            return HttpResponseBadRequest('should provide publishAt')
-
-        if not authorId:
-            return HttpResponseBadRequest('should provide authorId')
-
-        if not location:
-            return HttpResponseBadRequest('should provide location')
-
-        bookType = BookType.objects.get(id=bookTypeId)
-        author = Author.objects.get(id=authorId)
+        try:
+            author = Author.objects.get(id=authorId, status=0)
+        except ObjectDoesNotExist:
+            return JsonResponse({'code': LibraryError.INVALID_PARAMETER.value, 'error': f"authorId {authorId} not found"})
 
         Author.objects.filter(id=authorId).update(updateAt=currentDateTime, publishTimes=author.publishTimes+1)
 
@@ -242,13 +272,14 @@ def createAndGetBook(request):  # 新增書本
             location=location,
         )
         newBook.save()
+        return JsonResponse({'code': LibraryError.SUCCESSFUL.value, 'result': {'id': newBook.id }}, safe=False)
 
-        return JsonResponse(data={'id': newBook.id}, safe=True)
     elif request.method == 'GET':  # 取得所有書本
         books = list(Book.objects.filter(status=0).values())
-        return JsonResponse(data={'books': books}, safe=False)
+        return JsonResponse({'code': LibraryError.SUCCESSFUL.value, 'result': {'books': books }}, safe=False)
+
     else:
-        return HttpResponseBadRequest('Invalid api')
+        return JsonResponse({'code': LibraryError.INVALID_API.value, 'message': 'Invalid api'})
 
 
 @csrf_exempt
@@ -257,26 +288,36 @@ def deleteBook(request, bookId):
         now = timezone.now()
         currentDateTime = now.strftime("%Y-%m-%d %H:%M:%S")
 
-        book = Book.objects.get(id=bookId)
+        try:
+            book = Book.objects.get(id=bookId, status=0)
+        except ObjectDoesNotExist:
+            return JsonResponse({'code': LibraryError.INVALID_PARAMETER.value, 'error': f"bookId {bookId} not found"})
 
         Author.objects.filter(id=book.author.id).update(updateAt=currentDateTime, publishTimes=book.author.publishTimes-1)
         Book.objects.filter(id=bookId).update(updateAt=currentDateTime, status=9)
 
-        return JsonResponse(data={'message': f'bookId {bookId} deleted'}, safe=False)
+        return JsonResponse({'code': LibraryError.SUCCESSFUL.value, 'message': f'bookId {bookId} deleted'}, safe=False)
 
     else:
-        return HttpResponseBadRequest('Invalid api')
+        return JsonResponse({'code': LibraryError.INVALID_API.value, 'message': 'Invalid api'})
+
 
 
 @csrf_exempt
 def borrowBook(request, bookId, readerId):  # 借書
     if request.method == 'POST':
-
         now = timezone.now()
         currentDateTime = now.strftime("%Y-%m-%d %H:%M:%S")
 
-        book = Book.objects.get(id=bookId, status=0)
-        reader = Reader.objects.get(id=readerId)
+        try:
+            book = Book.objects.get(id=bookId, status=0)
+        except ObjectDoesNotExist:
+            return JsonResponse({'code': LibraryError.INVALID_PARAMETER.value, 'error': f"bookId {bookId} not found"})
+
+        try:
+            reader = Reader.objects.get(id=readerId, status=0)
+        except ObjectDoesNotExist:
+            return JsonResponse({'code': LibraryError.INVALID_PARAMETER.value, 'error': f"readerId {readerId} not found"})
 
         Book.objects.filter(id=readerId).update(updateAt=currentDateTime, status=1)
         Reader.objects.filter(id=readerId).update(updateAt=currentDateTime, borrowTimes=reader.borrowTimes+1)
@@ -291,47 +332,56 @@ def borrowBook(request, bookId, readerId):  # 借書
             times=1,
         )
         newBorrow.save()
+        return JsonResponse({'code': LibraryError.SUCCESSFUL.value, 'result': {'id': newBorrow.id }}, safe=False)
 
-        return JsonResponse(data={'id': newBorrow.id}, safe=True)
     else:
-        return HttpResponseBadRequest('Invalid api')
+        return JsonResponse({'code': LibraryError.INVALID_API.value, 'message': 'Invalid api'})
+
 
 
 @csrf_exempt
 def renewBook(request, bookId, readerId):  # 續借
     if request.method == 'POST':
-
         now = timezone.now()
         currentDateTime = now.strftime("%Y-%m-%d %H:%M:%S")
 
-        borrow = Borrow.objects.get(book_id=bookId, reader_id=readerId, status=0)
-        if borrow.times >= maxBorrowTimes:
-            return HttpResponseBadRequest('Can not borrow it any more.')
+        try:
+            borrow = Borrow.objects.get(book_id=bookId, reader_id=readerId, status=0)
+        except ObjectDoesNotExist:
+            return JsonResponse({'code': LibraryError.INVALID_PARAMETER.value, 'error': f"borrow of bookId {bookId}, readerId {readerId} not found"})
+
+        if borrow.times >= maxBorrowTimes: 
+            return JsonResponse({'code': LibraryError.OVER_BORROW_TIMES_LIMIT.value, 'message': 'Can not borrow it any more'})
 
         Borrow.objects.filter(id=borrow.id).update(updateAt=currentDateTime, times=borrow.times+1)
+        return JsonResponse({'code': LibraryError.SUCCESSFUL.value, 'message': 'book renewal successful'}, safe=False)
 
-        return JsonResponse(data={'message': 'book renewal successful'}, safe=True)
     else:
-        return HttpResponseBadRequest('Invalid api')
+        return JsonResponse({'code': LibraryError.INVALID_API.value, 'message': 'Invalid api'})
+
 
 
 @csrf_exempt
 def returnBook(request, bookId, readerId):  # 續借
     if request.method == 'POST':
-
         now = timezone.now()
         currentDateTime = now.strftime("%Y-%m-%d %H:%M:%S")
 
-        borrow = Borrow.objects.get(book_id=bookId, reader_id=readerId, status=0)
+        try:
+            borrow = Borrow.objects.get(book_id=bookId, reader_id=readerId, status=0)
+        except ObjectDoesNotExist:
+            return JsonResponse({'code': LibraryError.INVALID_PARAMETER.value, 'error': f"borrow of bookId {bookId}, readerId {readerId} not found"})
+
         if borrow.borrowAt + timedelta(days=borrow.times*BorrowDays) < now:  # 逾期還書
             reader = Reader.objects.get(id=readerId)
             Reader.objects.filter(id=readerId).update(updateAt=currentDateTime, violationTimes=reader.violationTimes+1)
 
         Borrow.objects.filter(id=borrow.id).update(updateAt=currentDateTime, returnAt=currentDateTime, status=9)
+        return JsonResponse({'code': LibraryError.SUCCESSFUL.value, 'message': 'book return successful'}, safe=False)
 
-        return JsonResponse(data={'message': 'book return successful'}, safe=True)
     else:
-        return HttpResponseBadRequest('Invalid api')
+        return JsonResponse({'code': LibraryError.INVALID_API.value, 'message': 'Invalid api'})
+
 
 
 @csrf_exempt
@@ -342,20 +392,27 @@ def createAndGetReport(request):
         readerId = body.get('readerId')
         content = body.get('content')
 
+        if not bookId:
+            return JsonResponse({'code': LibraryError.INSUFFICIENT_PARAMETER.value, 'message': 'should provide bookId'})
+
+        if not readerId:
+            return JsonResponse({'code': LibraryError.INSUFFICIENT_PARAMETER.value, 'message': 'should provide readerId'})
+
+        if not content:
+            return JsonResponse({'code': LibraryError.INSUFFICIENT_PARAMETER.value, 'message': 'should provide content'})
+
         now = timezone.now()
         currentDateTime = now.strftime("%Y-%m-%d %H:%M:%S")
 
-        if not bookId:
-            return HttpResponseBadRequest('should provide bookId')
+        try:
+            book = Book.objects.get(id=bookId, status=0)
+        except ObjectDoesNotExist:
+            return JsonResponse({'code': LibraryError.INVALID_PARAMETER.value, 'error': f"bookId {bookId} not found"})
 
-        if not readerId:
-            return HttpResponseBadRequest('should provide readerId')
-
-        if not content:
-            return HttpResponseBadRequest('should provide content')
-
-        book = Book.objects.get(id=bookId)
-        reader = Reader.objects.get(id=readerId)
+        try:
+            reader = Reader.objects.get(id=readerId, status=0)
+        except ObjectDoesNotExist:
+            return JsonResponse({'code': LibraryError.INVALID_PARAMETER.value, 'error': f"readerId {readerId} not found"})
 
         newReport = Report(
             createAt=currentDateTime,
@@ -366,13 +423,14 @@ def createAndGetReport(request):
             content=content
         )
         newReport.save()
+        return JsonResponse({'code': LibraryError.SUCCESSFUL.value, 'result': {'id': newReport.id }}, safe=False)
 
-        return JsonResponse(data={'id': newReport.id}, safe=True)
     elif request.method == 'GET':  # 取得所有心得
         reports = list(Report.objects.filter(status=0).values())
-        return JsonResponse(data={'reports': reports}, safe=False)
+        return JsonResponse({'code': LibraryError.SUCCESSFUL.value, 'result': {'reports': reports }}, safe=False)
+
     else:
-        return HttpResponseBadRequest('Invalid api')
+        return JsonResponse({'code': LibraryError.INVALID_API.value, 'message': 'Invalid api'})
 
 
 @csrf_exempt
@@ -381,43 +439,50 @@ def updateAndDeleteReport(request, reportId):
         body = json.loads(request.body)
         content = body.get('content')
 
+        if not content:
+            return JsonResponse({'code': LibraryError.INSUFFICIENT_PARAMETER.value, 'message': 'should provide content'})
+
         now = timezone.now()
         currentDateTime = now.strftime("%Y-%m-%d %H:%M:%S")
 
-        if not content:
-            return HttpResponseBadRequest('should provide content')
-
         Report.objects.filter(id=reportId).update(updateAt=currentDateTime, content=content)
-        return JsonResponse(data={'message': f'reportId {reportId} updated'}, safe=False)
+        return JsonResponse({'code': LibraryError.SUCCESSFUL.value, 'message': f'reportId {reportId} updated'}, safe=False)
+
     elif request.method == 'DELETE':  # 刪除心得
         now = timezone.now()
         currentDateTime = now.strftime("%Y-%m-%d %H:%M:%S")
 
         Report.objects.filter(id=reportId).update(updateAt=currentDateTime, status=9)
-        return JsonResponse(data={'message': f'reportId {reportId} deleted'}, safe=False)
+        return JsonResponse({'code': LibraryError.SUCCESSFUL.value, 'message': f'reportId {reportId} deleted'}, safe=False)
+
     else:
-        return HttpResponseBadRequest('Invalid api')
+        return JsonResponse({'code': LibraryError.INVALID_API.value, 'message': 'Invalid api'})
+
 
 
 def getRankOfBorrowTimes(request):
     if request.method == 'GET':  # 取得讀者借書次數排名
         readers = list(Reader.objects.all().order_by('-borrowTimes').values())
-        return JsonResponse(data={'readers': readers}, safe=True)
+        return JsonResponse({'code': LibraryError.SUCCESSFUL.value, 'result': {'readers': readers }}, safe=False)
+
     else:
-        return HttpResponseBadRequest('Invalid api')
+        return JsonResponse({'code': LibraryError.INVALID_API.value, 'message': 'Invalid api'})
 
 
 def getRankOfViolationTimes(request):
     if request.method == 'GET':  # 取得讀者違規次數排名
         readers = list(Reader.objects.all().order_by('-violationTimes').values())
-        return JsonResponse(data={'readers': readers}, safe=True)
+        return JsonResponse({'code': LibraryError.SUCCESSFUL.value, 'result': {'readers': readers }}, safe=False)
+
     else:
-        return HttpResponseBadRequest('Invalid api')
+        return JsonResponse({'code': LibraryError.INVALID_API.value, 'message': 'Invalid api'})
+
 
 
 def getRankOfPublishTimes(request):
     if request.method == 'GET':  # 取得作者出版次數排名
         authors = list(Author.objects.all().order_by('-publishTimes').values())
-        return JsonResponse(data={'authors': authors}, safe=True)
+        return JsonResponse({'code': LibraryError.SUCCESSFUL.value, 'result': {'authors': authors }}, safe=False)
+
     else:
-        return HttpResponseBadRequest('Invalid api')
+        return JsonResponse({'code': LibraryError.INVALID_API.value, 'message': 'Invalid api'})

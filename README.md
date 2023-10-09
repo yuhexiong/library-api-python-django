@@ -75,6 +75,18 @@ python library/manage.py runserver
 - POST /rank/violationTimes : 取得讀者違規次數排名
 - POST /rank/publishTimes : 取得作者出版次數排名
 
+## Custom Error Code
+
+In library/books/view
+
+```
+SUCCESSFUL = 0
+INVALID_API = 117
+INVALID_PARAMETER = 118
+INSUFFICIENT_PARAMETER = 119
+OVER_BORROW_TIMES_LIMIT = 120
+```
+
 ## Reference
 
 - [Lemon-412: Library-System](https://github.com/Lemon-412/Library-System)
