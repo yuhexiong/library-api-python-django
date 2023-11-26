@@ -61,8 +61,8 @@ python library/manage.py runserver
 
 ### borrow, renew, return
 
-- POST /borrow/{bookId}/{readerId} : 借書, 書本的狀態改為停用
-- POST /renew/{bookId}/{readerId} : 續借
+- POST /borrow/{bookId}/{readerId} : 借書, 書本的狀態改為停用, 一次借書30天
+- POST /renew/{bookId}/{readerId} : 續借, 最多續借2次
 - POST /return/{bookId}/{readerId} : 還書, 超時會被記錄違規次數
 
 ### report
