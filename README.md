@@ -24,6 +24,9 @@ python library/manage.py migrate
 python library/manage.py runserver
 ```
 
+## ER Diagram
+![image](https://github.com/yuhexiong/library-api-python-django/blob/main/library/image/library_schema.png)
+
 ## API
 
 ### user
@@ -86,8 +89,3 @@ INVALID_PARAMETER = 118
 INSUFFICIENT_PARAMETER = 119
 OVER_BORROW_TIMES_LIMIT = 120
 ```
-
-## Reference
-
-- [Lemon-412: Library-System](https://github.com/Lemon-412/Library-System)
-- [JarvisLu1029: 實作一套個人書籍管理系統的後端 API](https://github.com/JarvisLu1029/ntnu_job)
