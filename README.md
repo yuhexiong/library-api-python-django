@@ -5,7 +5,7 @@
 - Language: Python v3.9.15
 - Web FrameWork: Django v4.2.6
 
-### ENV
+## ENV
 
 set database parameter in library/library/setting
 
@@ -17,13 +17,15 @@ set database parameter in library/library/setting
 'NAME':
 ```
 
-### run migration
+## Run
+
+### migration
 
 ```
 python library/manage.py migrate
 ```
 
-### run
+### server
 
 ```
 python library/manage.py runserver
