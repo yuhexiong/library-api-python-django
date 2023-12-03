@@ -1,5 +1,10 @@
 # Library API
 
+## Overview
+
+- Language: Python v3.9.15
+- Web FrameWork: Django v4.2.6
+
 ### ENV
 
 set database parameter in library/library/setting
