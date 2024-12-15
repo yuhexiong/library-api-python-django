@@ -7,14 +7,17 @@
 
 ## ENV
 
-set database parameter in libraryapi/setting
+copy `.env.example` as `.env`
 
 ```
-'HOST':
-'PORT':
-'USER':
-'PASSWORD':
-'NAME':
+DB_HOST="127.0.0.1"
+DB_PORT="3306"
+DB_USER="root"
+DB_PASSWORD="password"
+DB_NAME="database"
+
+SECRET_KEY="django123456789#@?-key"
+DEBUG="True"
 ```
 
 ## Run
