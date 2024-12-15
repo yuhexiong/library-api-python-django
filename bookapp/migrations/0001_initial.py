@@ -57,7 +57,7 @@ class Migration(migrations.Migration):
                 (
                     "author",
                     models.ForeignKey(
-                        on_delete=django.db.models.deletion.RESTRICT, to="books.author"
+                        on_delete=django.db.models.deletion.RESTRICT, to="bookapp.author"
                     ),
                 ),
             ],
@@ -156,13 +156,13 @@ class Migration(migrations.Migration):
                 (
                     "book",
                     models.ForeignKey(
-                        on_delete=django.db.models.deletion.RESTRICT, to="books.book"
+                        on_delete=django.db.models.deletion.RESTRICT, to="bookapp.book"
                     ),
                 ),
                 (
                     "reader",
                     models.ForeignKey(
-                        on_delete=django.db.models.deletion.RESTRICT, to="books.reader"
+                        on_delete=django.db.models.deletion.RESTRICT, to="bookapp.reader"
                     ),
                 ),
             ],
@@ -174,7 +174,7 @@ class Migration(migrations.Migration):
             model_name="reader",
             name="user",
             field=models.ForeignKey(
-                on_delete=django.db.models.deletion.RESTRICT, to="books.user"
+                on_delete=django.db.models.deletion.RESTRICT, to="bookapp.user"
             ),
         ),
         migrations.CreateModel(
@@ -200,13 +200,13 @@ class Migration(migrations.Migration):
                 (
                     "book",
                     models.ForeignKey(
-                        on_delete=django.db.models.deletion.RESTRICT, to="books.book"
+                        on_delete=django.db.models.deletion.RESTRICT, to="bookapp.book"
                     ),
                 ),
                 (
                     "reader",
                     models.ForeignKey(
-                        on_delete=django.db.models.deletion.RESTRICT, to="books.reader"
+                        on_delete=django.db.models.deletion.RESTRICT, to="bookapp.reader"
                     ),
                 ),
             ],
@@ -218,14 +218,14 @@ class Migration(migrations.Migration):
             model_name="book",
             name="bookType",
             field=models.ForeignKey(
-                on_delete=django.db.models.deletion.RESTRICT, to="books.booktype"
+                on_delete=django.db.models.deletion.RESTRICT, to="bookapp.booktype"
             ),
         ),
         migrations.AddField(
             model_name="author",
             name="user",
             field=models.ForeignKey(
-                on_delete=django.db.models.deletion.RESTRICT, to="books.user"
+                on_delete=django.db.models.deletion.RESTRICT, to="bookapp.user"
             ),
         ),
     ]

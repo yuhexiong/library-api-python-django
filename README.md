@@ -7,7 +7,7 @@
 
 ## ENV
 
-set database parameter in library/library/setting
+set database parameter in libraryapi/setting
 
 ```
 'HOST':
@@ -22,17 +22,17 @@ set database parameter in library/library/setting
 ### migration
 
 ```
-python library/manage.py migrate
+python manage.py migrate
 ```
 
 ### server
 
 ```
-python library/manage.py runserver
+python manage.py runserver
 ```
 
 ## ER Diagram
-![image](https://github.com/yuhexiong/library-api-python-django/blob/main/library/image/library_schema.png)
+![image](./image/library_schema.png)
 
 ## API
 
@@ -87,7 +87,7 @@ python library/manage.py runserver
 
 ## Custom Error Code
 
-In library/books/view
+In bookapp/view
 
 ```
 SUCCESSFUL = 0
