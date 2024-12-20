@@ -35,7 +35,7 @@ python manage.py runserver
 ```
 
 ## ER Diagram
-![image](./image/library_schema.png)
+![image](./library_schema.png)
 
 ## API
 

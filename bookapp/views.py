@@ -1,12 +1,9 @@
 from datetime import timedelta
 import json
-
 from django.http import JsonResponse
 from http import HTTPStatus
 from django.utils import timezone
-from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import ObjectDoesNotExist
-
 from enum import Enum
 from .models import Author, Book, BookType, Borrow, Reader, Report, User
 
@@ -22,7 +19,7 @@ class LibraryError(Enum):
     OVER_BORROW_TIMES_LIMIT = 120
 
 
-@csrf_exempt
+
 def createAndGetUser(request):
     if request.method == 'POST':  # 新增使用者
         body = json.loads(request.body)
@@ -51,7 +48,6 @@ def createAndGetUser(request):
         return JsonResponse({'code': LibraryError.INVALID_API.value, 'message': 'Invalid api'}, status=HTTPStatus.BAD_REQUEST)
 
 
-@csrf_exempt
 def deleteUser(request, userId):
     if request.method == 'DELETE':  # 刪除使用者
         now = timezone.now()
@@ -67,7 +63,6 @@ def deleteUser(request, userId):
         return JsonResponse({'code': LibraryError.INVALID_API.value, 'message': 'Invalid api'}, status=HTTPStatus.BAD_REQUEST)
 
 
-@csrf_exempt
 def createAndGetAuthor(request):
     if request.method == 'POST':  # 新增作者
         body = json.loads(request.body)
@@ -109,7 +104,6 @@ def createAndGetAuthor(request):
         return JsonResponse({'code': LibraryError.INVALID_API.value, 'message': 'Invalid api'}, status=HTTPStatus.BAD_REQUEST)
 
 
-@csrf_exempt
 def deleteAuthor(request, authorId):
     if request.method == 'DELETE':  # 刪除作者
         now = timezone.now()
@@ -122,7 +116,6 @@ def deleteAuthor(request, authorId):
         return JsonResponse({'code': LibraryError.INVALID_API.value, 'message': 'Invalid api'}, status=HTTPStatus.BAD_REQUEST)
 
 
-@csrf_exempt
 def createAndGetReader(request):  # 新增讀者
     if request.method == 'POST':
         body = json.loads(request.body)
@@ -165,7 +158,6 @@ def createAndGetReader(request):  # 新增讀者
         return JsonResponse({'code': LibraryError.INVALID_API.value, 'message': 'Invalid api'}, status=HTTPStatus.BAD_REQUEST)
 
 
-@csrf_exempt
 def deleteReader(request, readerId):
     if request.method == 'DELETE':  # 刪除作者
         now = timezone.now()
@@ -178,7 +170,6 @@ def deleteReader(request, readerId):
         return JsonResponse({'code': LibraryError.INVALID_API.value, 'message': 'Invalid api'}, status=HTTPStatus.BAD_REQUEST)
 
 
-@csrf_exempt
 def createAndGetBookType(request):  # 新增書本類型
     if request.method == 'POST':
         body = json.loads(request.body)
@@ -208,7 +199,6 @@ def createAndGetBookType(request):  # 新增書本類型
         return JsonResponse({'code': LibraryError.INVALID_API.value, 'message': 'Invalid api'}, status=HTTPStatus.BAD_REQUEST)
 
 
-@csrf_exempt
 def deleteBookType(request, bookTypeId):
     if request.method == 'DELETE':  # 刪除書本類型
         now = timezone.now()
@@ -221,7 +211,6 @@ def deleteBookType(request, bookTypeId):
         return JsonResponse({'code': LibraryError.INVALID_API.value, 'message': 'Invalid api'}, status=HTTPStatus.BAD_REQUEST)
 
 
-@csrf_exempt
 def createAndGetBook(request):  # 新增書本
     if request.method == 'POST':
         body = json.loads(request.body)
@@ -282,7 +271,6 @@ def createAndGetBook(request):  # 新增書本
         return JsonResponse({'code': LibraryError.INVALID_API.value, 'message': 'Invalid api'}, status=HTTPStatus.BAD_REQUEST)
 
 
-@csrf_exempt
 def deleteBook(request, bookId):
     if request.method == 'DELETE':  # 刪除書本
         now = timezone.now()
@@ -303,7 +291,6 @@ def deleteBook(request, bookId):
 
 
 
-@csrf_exempt
 def borrowBook(request, bookId, readerId):  # 借書
     if request.method == 'POST':
         now = timezone.now()
@@ -339,7 +326,6 @@ def borrowBook(request, bookId, readerId):  # 借書
 
 
 
-@csrf_exempt
 def renewBook(request, bookId, readerId):  # 續借
     if request.method == 'POST':
         now = timezone.now()
@@ -361,7 +347,6 @@ def renewBook(request, bookId, readerId):  # 續借
 
 
 
-@csrf_exempt
 def returnBook(request, bookId, readerId):  # 續借
     if request.method == 'POST':
         now = timezone.now()
@@ -384,7 +369,6 @@ def returnBook(request, bookId, readerId):  # 續借
 
 
 
-@csrf_exempt
 def createAndGetReport(request):
     if request.method == 'POST':  # 新增心得
         body = json.loads(request.body)
@@ -433,7 +417,6 @@ def createAndGetReport(request):
         return JsonResponse({'code': LibraryError.INVALID_API.value, 'message': 'Invalid api'}, status=HTTPStatus.BAD_REQUEST)
 
 
-@csrf_exempt
 def updateAndDeleteReport(request, reportId):
     if request.method == 'PATCH':  # 刪除心得
         body = json.loads(request.body)
