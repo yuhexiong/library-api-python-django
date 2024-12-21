@@ -2,6 +2,7 @@ from functools import wraps
 from http import HTTPStatus
 from django.http import JsonResponse
 from bookapp.errors import LibraryCode
+from django.utils import timezone
 
 def method_required(allowed_methods):
     def decorator(view_func):
@@ -18,3 +19,9 @@ def method_required(allowed_methods):
             return view_func(request, *args, **kwargs)
         return _wrapped_view
     return decorator
+
+
+def get_current_datetime():
+    now = timezone.now()
+    current_datetime = now.strftime("%Y-%m-%d %H:%M:%S")
+    return current_datetime

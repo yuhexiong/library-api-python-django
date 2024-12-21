@@ -1,22 +1,25 @@
 from django.urls import path
-from bookapp import views
+from bookapp.views import user as userView
+from bookapp.views import author as authorView
+from bookapp.views import reader as readerView
+from bookapp.views import book_type as bookTypeView
 
 urlpatterns = [
     # 使用者
-    path('user', views.create_and_get_user, name="create_and_get_user"),
-    path('user/<str:user_id>', views.delete_user, name="delete_user"),
+    path('user', userView.create_and_get_user, name="create_and_get_user"),
+    path('user/<str:user_id>', userView.delete_user, name="delete_user"),
 
     # 作者
-    path('author', views.create_and_get_author, name="create_and_get_author"),
-    path('author/<str:author_id>', views.delete_author, name="delete_author"),
+    path('author', authorView.create_and_get_author, name="create_and_get_author"),
+    path('author/<str:author_id>', authorView.delete_author, name="delete_author"),
 
     # 讀者
-    path('reader', views.create_and_get_reader, name="create_and_get_reader"),
-    path('reader/<str:reader_id>', views.delete_reader, name="delete_reader"),
+    path('reader', readerView.create_and_get_reader, name="create_and_get_reader"),
+    path('reader/<str:reader_id>', readerView.delete_reader, name="delete_reader"),
 
     # 書本類型
-    path('book_type', views.create_and_get_book_type, name="create_and_get_book_type"),
-    path('book_type/<str:book_type_id>', views.delete_book_type, name="delete_book_type"),
+    path('book_type', bookTypeView.create_and_get_book_type, name="create_and_get_book_type"),
+    path('book_type/<str:book_type_id>', bookTypeView.delete_book_type, name="delete_book_type"),
 
     # 書本
     path('book', views.create_and_get_book, name="create_and_get_book"),
