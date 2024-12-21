@@ -61,7 +61,7 @@ python manage.py runserver
 
 - POST /book_type : 新增書本類型
 - GET /book_type : 取得所有生效的書本類型
-- DELETE /book_type/{bookTypeId} : 停用書本類型
+- DELETE /book_type/{book_type_id} : 停用書本類型
 
 ### book
 
@@ -90,12 +90,12 @@ python manage.py runserver
 
 ## Custom Error Code
 
-In bookapp/view
+In bookapp/errors
 
 ```
 SUCCESSFUL = 0
-INVALID_API = 117
-INVALID_PARAMETER = 118
-INSUFFICIENT_PARAMETER = 119
-OVER_BORROW_TIMES_LIMIT = 120
+INVALID_API = 1001
+INVALID_PARAMETER = 1002
+INSUFFICIENT_PARAMETER = 1003
+OVER_BORROW_TIMES_LIMIT = 1004
 ```
