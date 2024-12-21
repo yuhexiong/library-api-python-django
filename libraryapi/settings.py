@@ -64,6 +64,9 @@ DATABASES = {
         'USER': os.getenv('DB_USER', ''),
         'PASSWORD': os.getenv('DB_PASSWORD', ''),
         'NAME': os.getenv('DB_NAME', ''),
+        'OPTIONS': {
+            'connect_timeout': 10,
+        },
     }
 }
 

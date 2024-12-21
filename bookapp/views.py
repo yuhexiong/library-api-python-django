@@ -7,8 +7,8 @@ from django.core.exceptions import ObjectDoesNotExist
 from enum import Enum
 from .models import Author, Book, BookType, Borrow, Reader, Report, User
 
-maxBorrowTimes = 3  # 最多續借2次
-BorrowDays = 30  # 一次借書30天
+max_borrow_times = 3  # 最多续借2次
+borrow_days = 30  # 一次借书30天
 
 # error code
 class LibraryError(Enum):
@@ -18,9 +18,7 @@ class LibraryError(Enum):
     INSUFFICIENT_PARAMETER = 119
     OVER_BORROW_TIMES_LIMIT = 120
 
-
-
-def createAndGetUser(request):
+def create_and_get_user(request):
     if request.method == 'POST':  # 新增使用者
         body = json.loads(request.body)
         name = body.get('name')
@@ -29,16 +27,16 @@ def createAndGetUser(request):
             return JsonResponse({'code': LibraryError.INSUFFICIENT_PARAMETER.value, 'message': 'should provide name'}, status=HTTPStatus.NOT_FOUND)
 
         now = timezone.now()
-        currentDateTime = now.strftime("%Y-%m-%d %H:%M:%S")
+        current_datetime = now.strftime("%Y-%m-%d %H:%M:%S")
 
-        newUser = User(
-            createAt=currentDateTime,
-            updateAt=currentDateTime,
+        new_user = User(
+            create_at=current_datetime,
+            update_at=current_datetime,
             status=0,
             name=name
         )
-        newUser.save()
-        return JsonResponse({'code': LibraryError.SUCCESSFUL.value, 'result': {'id': newUser.id}}, safe=False)
+        new_user.save()
+        return JsonResponse({'code': LibraryError.SUCCESSFUL.value, 'result': {'id': new_user.id}}, safe=False)
 
     elif request.method == 'GET':  # 取得所有使用者
         users = list(User.objects.filter(status=0).values())
@@ -47,367 +45,345 @@ def createAndGetUser(request):
     else:
         return JsonResponse({'code': LibraryError.INVALID_API.value, 'message': 'Invalid api'}, status=HTTPStatus.BAD_REQUEST)
 
-
-def deleteUser(request, userId):
+def delete_user(request, user_id):
     if request.method == 'DELETE':  # 刪除使用者
         now = timezone.now()
-        currentDateTime = now.strftime("%Y-%m-%d %H:%M:%S")
+        current_datetime = now.strftime("%Y-%m-%d %H:%M:%S")
 
-        User.objects.filter(id=userId).update(updateAt=currentDateTime, status=9)
-        Author.objects.filter(user_id=userId).update(updateAt=currentDateTime, status=9)
-        Reader.objects.filter(user_id=userId).update(updateAt=currentDateTime, status=9)
+        User.objects.filter(id=user_id).update(update_at=current_datetime, status=9)
+        Author.objects.filter(user_id=user_id).update(update_at=current_datetime, status=9)
+        Reader.objects.filter(user_id=user_id).update(update_at=current_datetime, status=9)
 
-        return JsonResponse({'code': LibraryError.SUCCESSFUL.value, 'message': f'userId {userId} deleted'}, safe=False)
+        return JsonResponse({'code': LibraryError.SUCCESSFUL.value, 'message': f'user_id {user_id} deleted'}, safe=False)
 
     else:
         return JsonResponse({'code': LibraryError.INVALID_API.value, 'message': 'Invalid api'}, status=HTTPStatus.BAD_REQUEST)
 
-
-def createAndGetAuthor(request):
+def create_and_get_author(request):
     if request.method == 'POST':  # 新增作者
         body = json.loads(request.body)
         name = body.get('name')
-        userId = body.get('userId')
+        user_id = body.get('userId')
 
         now = timezone.now()
-        currentDateTime = now.strftime("%Y-%m-%d %H:%M:%S")
+        current_datetime = now.strftime("%Y-%m-%d %H:%M:%S")
 
-        if not userId and not name:
+        if not user_id and not name:
             return JsonResponse({'code': LibraryError.INSUFFICIENT_PARAMETER.value, 'message': 'should provide userId or name'}, status=HTTPStatus.NOT_FOUND)
 
-        if userId:
+        if user_id:
             pass
-        else:  # no userId then create user by name
-            InsertUserResult = createAndGetUser(request)
-            userId = json.loads(InsertUserResult.content.decode("utf-8"))["id"]
+        else:  # no user_id then create user by name
+            insert_user_result = create_and_get_user(request)
+            user_id = json.loads(insert_user_result.content.decode("utf-8"))['result']['id']
 
         try:
-            user = User.objects.get(id=userId, status=0)
+            user = User.objects.get(id=user_id, status=0)
         except ObjectDoesNotExist:
-            return JsonResponse({'code': LibraryError.INVALID_PARAMETER.value, 'error': f"userId {userId} not found"}, status=HTTPStatus.NOT_FOUND)
+            return JsonResponse({'code': LibraryError.INVALID_PARAMETER.value, 'error': f'user_id {user_id} not found'}, status=HTTPStatus.NOT_FOUND)
         
-        newAuthor = Author(
-            createAt=currentDateTime,
-            updateAt=currentDateTime,
+        new_author = Author(
+            create_at=current_datetime,
+            update_at=current_datetime,
             status=0,
             user=user,
-            publishTimes=0
+            publish_times=0
         )
-        newAuthor.save()
-        return JsonResponse({'code': LibraryError.SUCCESSFUL.value, 'result': {'id': newAuthor.id }}, safe=False)
+        new_author.save()
+        return JsonResponse({'code': LibraryError.SUCCESSFUL.value, 'result': {'id': new_author.id}}, safe=False)
 
     elif request.method == 'GET':  # 取得所有作者
         authors = list(Author.objects.filter(status=0).values())
-        return JsonResponse({'code': LibraryError.SUCCESSFUL.value, 'result': {'authors': authors }}, safe=False)
+        return JsonResponse({'code': LibraryError.SUCCESSFUL.value, 'result': {'authors': authors}}, safe=False)
 
     else:
         return JsonResponse({'code': LibraryError.INVALID_API.value, 'message': 'Invalid api'}, status=HTTPStatus.BAD_REQUEST)
 
-
-def deleteAuthor(request, authorId):
+def delete_author(request, author_id):
     if request.method == 'DELETE':  # 刪除作者
         now = timezone.now()
-        currentDateTime = now.strftime("%Y-%m-%d %H:%M:%S")
+        current_datetime = now.strftime("%Y-%m-%d %H:%M:%S")
 
-        Author.objects.filter(id=authorId).update(updateAt=currentDateTime, status=9)
-        return JsonResponse({'code': LibraryError.SUCCESSFUL.value, 'message': f'authorId {authorId} deleted'}, safe=False)
+        Author.objects.filter(id=author_id).update(update_at=current_datetime, status=9)
+        return JsonResponse({'code': LibraryError.SUCCESSFUL.value, 'message': f'author_id {author_id} deleted'}, safe=False)
 
     else:
         return JsonResponse({'code': LibraryError.INVALID_API.value, 'message': 'Invalid api'}, status=HTTPStatus.BAD_REQUEST)
 
 
-def createAndGetReader(request):  # 新增讀者
+def create_and_get_reader(request):  # 新增讀者
     if request.method == 'POST':
         body = json.loads(request.body)
         name = body.get('name')
-        userId = body.get('userId')
+        user_id = body.get('user_id')
 
         now = timezone.now()
-        currentDateTime = now.strftime("%Y-%m-%d %H:%M:%S")
+        current_date_time = now.strftime("%Y-%m-%d %H:%M:%S")
 
-        if not userId and not name:
-            return JsonResponse({'code': LibraryError.INSUFFICIENT_PARAMETER.value, 'message': 'should provide userId or name'}, status=HTTPStatus.NOT_FOUND)
+        if not user_id and not name:
+            return JsonResponse({'code': LibraryError.INSUFFICIENT_PARAMETER.value, 'message': 'should provide user_id or name'}, status=HTTPStatus.NOT_FOUND)
 
-        if userId:
-            pass
-        else:  # no userId then create user by name
-            InsertUserResult = createAndGetUser(request)
-            userId = json.loads(InsertUserResult.content.decode("utf-8"))["id"]
+        if not user_id:
+            insert_user_result = create_and_get_user(request)
+            user_id = json.loads(insert_user_result.content.decode("utf-8"))["id"]
 
         try:
-            user = User.objects.get(id=userId, status=0)
+            user = User.objects.get(id=user_id, status=0)
         except ObjectDoesNotExist:
-            return JsonResponse({'code': LibraryError.INVALID_PARAMETER.value, 'error': f"userId {userId} not found"}, status=HTTPStatus.NOT_FOUND)
+            return JsonResponse({'code': LibraryError.INVALID_PARAMETER.value, 'error': f"user_id {user_id} not found"}, status=HTTPStatus.NOT_FOUND)
 
-        newReader = Reader(
-            createAt=currentDateTime,
-            updateAt=currentDateTime,
+        new_reader = Reader(
+            create_at=current_date_time,
+            update_at=current_date_time,
             status=0,
             user=user,
-            borrowTimes=0,
-            violationTimes=0,
+            borrow_times=0,
+            violation_times=0,
         )
-        newReader.save()
-        return JsonResponse({'code': LibraryError.SUCCESSFUL.value, 'result': {'id': newReader.id }}, safe=False)
+        new_reader.save()
+        return JsonResponse({'code': LibraryError.SUCCESSFUL.value, 'result': {'id': new_reader.id}}, safe=False)
 
     elif request.method == 'GET':  # 取得所有讀者
         readers = list(Reader.objects.filter(status=0).values())
-        return JsonResponse({'code': LibraryError.SUCCESSFUL.value, 'result': {'readers': readers }}, safe=False)
+        return JsonResponse({'code': LibraryError.SUCCESSFUL.value, 'result': {'readers': readers}}, safe=False)
 
     else:
-        return JsonResponse({'code': LibraryError.INVALID_API.value, 'message': 'Invalid api'}, status=HTTPStatus.BAD_REQUEST)
+        return JsonResponse({'code': LibraryError.INVALID_API.value, 'message': 'Invalid API'}, status=HTTPStatus.BAD_REQUEST)
 
 
-def deleteReader(request, readerId):
-    if request.method == 'DELETE':  # 刪除作者
+def delete_reader(request, reader_id):
+    if request.method == 'DELETE':  # 刪除讀者
         now = timezone.now()
-        currentDateTime = now.strftime("%Y-%m-%d %H:%M:%S")
+        current_date_time = now.strftime("%Y-%m-%d %H:%M:%S")
 
-        Reader.objects.filter(id=readerId).update(updateAt=currentDateTime, status=9)
-        return JsonResponse({'code': LibraryError.SUCCESSFUL.value, 'message': f'readerId {readerId} deleted'}, safe=False)
+        Reader.objects.filter(id=reader_id).update(update_at=current_date_time, status=9)
+        return JsonResponse({'code': LibraryError.SUCCESSFUL.value, 'message': f'reader_id {reader_id} deleted'}, safe=False)
 
     else:
-        return JsonResponse({'code': LibraryError.INVALID_API.value, 'message': 'Invalid api'}, status=HTTPStatus.BAD_REQUEST)
+        return JsonResponse({'code': LibraryError.INVALID_API.value, 'message': 'Invalid API'}, status=HTTPStatus.BAD_REQUEST)
 
 
-def createAndGetBookType(request):  # 新增書本類型
+def create_and_get_book_type(request):  # 新增書本類型
     if request.method == 'POST':
         body = json.loads(request.body)
         name = body.get('name')
 
         now = timezone.now()
-        currentDateTime = now.strftime("%Y-%m-%d %H:%M:%S")
+        current_date_time = now.strftime("%Y-%m-%d %H:%M:%S")
 
         if not name:
             return JsonResponse({'code': LibraryError.INSUFFICIENT_PARAMETER.value, 'message': 'should provide name'}, status=HTTPStatus.NOT_FOUND)
 
-        newBookType = BookType(
-            createAt=currentDateTime,
-            updateAt=currentDateTime,
+        new_book_type = BookType(
+            create_at=current_date_time,
+            update_at=current_date_time,
             status=0,
             name=name,
         )
-        newBookType.save()
+        new_book_type.save()
 
-        return JsonResponse({'code': LibraryError.SUCCESSFUL.value, 'result': {'id': newBookType.id }}, safe=False)
+        return JsonResponse({'code': LibraryError.SUCCESSFUL.value, 'result': {'id': new_book_type.id}}, safe=False)
 
     elif request.method == 'GET':  # 取得所有書本類型
-        bookTypes = list(BookType.objects.filter(status=0).values())
-        return JsonResponse({'code': LibraryError.SUCCESSFUL.value, 'result': {'bookTypes': bookTypes }}, safe=False)
+        book_types = list(BookType.objects.filter(status=0).values())
+        return JsonResponse({'code': LibraryError.SUCCESSFUL.value, 'result': {'book_types': book_types}}, safe=False)
 
     else:
-        return JsonResponse({'code': LibraryError.INVALID_API.value, 'message': 'Invalid api'}, status=HTTPStatus.BAD_REQUEST)
+        return JsonResponse({'code': LibraryError.INVALID_API.value, 'message': 'Invalid API'}, status=HTTPStatus.BAD_REQUEST)
 
 
-def deleteBookType(request, bookTypeId):
+def delete_book_type(request, book_type_id):
     if request.method == 'DELETE':  # 刪除書本類型
         now = timezone.now()
-        currentDateTime = now.strftime("%Y-%m-%d %H:%M:%S")
+        current_date_time = now.strftime("%Y-%m-%d %H:%M:%S")
 
-        BookType.objects.filter(id=bookTypeId).update(updateAt=currentDateTime, status=9)
-        return JsonResponse({'code': LibraryError.SUCCESSFUL.value, 'message': f'bookTypeId {bookTypeId} deleted'}, safe=False)
+        BookType.objects.filter(id=book_type_id).update(update_at=current_date_time, status=9)
+        return JsonResponse({'code': LibraryError.SUCCESSFUL.value, 'message': f'book_type_id {book_type_id} deleted'}, safe=False)
 
     else:
-        return JsonResponse({'code': LibraryError.INVALID_API.value, 'message': 'Invalid api'}, status=HTTPStatus.BAD_REQUEST)
+        return JsonResponse({'code': LibraryError.INVALID_API.value, 'message': 'Invalid API'}, status=HTTPStatus.BAD_REQUEST)
 
 
-def createAndGetBook(request):  # 新增書本
+def create_and_get_book(request):  # 新增書本
     if request.method == 'POST':
         body = json.loads(request.body)
         name = body.get('name')
-        bookTypeId = body.get('bookTypeId')
-        publishAt = body.get('publishAt')
-        authorId = body.get('authorId')
+        book_type_id = body.get('book_type_id')
+        publish_at = body.get('publish_at')
+        author_id = body.get('author_id')
         location = body.get('location')
 
-        if not name:
-            return JsonResponse({'code': LibraryError.INSUFFICIENT_PARAMETER.value, 'message': 'should provide name'}, status=HTTPStatus.NOT_FOUND)
-
-        if not bookTypeId:
-            return JsonResponse({'code': LibraryError.INSUFFICIENT_PARAMETER.value, 'message': 'should provide bookTypeId'}, status=HTTPStatus.NOT_FOUND)
-
-        if not publishAt:
-            return JsonResponse({'code': LibraryError.INSUFFICIENT_PARAMETER.value, 'message': 'should provide publishAt'}, status=HTTPStatus.NOT_FOUND)
-
-        if not authorId:
-            return JsonResponse({'code': LibraryError.INSUFFICIENT_PARAMETER.value, 'message': 'should provide authorId'}, status=HTTPStatus.NOT_FOUND)
-
-        if not location:
-            return JsonResponse({'code': LibraryError.INSUFFICIENT_PARAMETER.value, 'message': 'should provide location'}, status=HTTPStatus.NOT_FOUND)
+        if not all([name, book_type_id, publish_at, author_id, location]):
+            return JsonResponse({'code': LibraryError.INSUFFICIENT_PARAMETER.value, 'message': 'Missing required parameters'}, status=HTTPStatus.NOT_FOUND)
 
         now = timezone.now()
-        currentDateTime = now.strftime("%Y-%m-%d %H:%M:%S")
+        current_date_time = now.strftime("%Y-%m-%d %H:%M:%S")
 
         try:
-            bookType = BookType.objects.get(id=bookTypeId, status=0)
+            book_type = BookType.objects.get(id=book_type_id, status=0)
         except ObjectDoesNotExist:
-            return JsonResponse({'code': LibraryError.INVALID_PARAMETER.value, 'error': f"bookTypeId {bookTypeId} not found"}, status=HTTPStatus.NOT_FOUND)
+            return JsonResponse({'code': LibraryError.INVALID_PARAMETER.value, 'error': f"book_type_id {book_type_id} not found"}, status=HTTPStatus.NOT_FOUND)
 
         try:
-            author = Author.objects.get(id=authorId, status=0)
+            author = Author.objects.get(id=author_id, status=0)
         except ObjectDoesNotExist:
-            return JsonResponse({'code': LibraryError.INVALID_PARAMETER.value, 'error': f"authorId {authorId} not found"}, status=HTTPStatus.NOT_FOUND)
+            return JsonResponse({'code': LibraryError.INVALID_PARAMETER.value, 'error': f"author_id {author_id} not found"}, status=HTTPStatus.NOT_FOUND)
 
-        Author.objects.filter(id=authorId).update(updateAt=currentDateTime, publishTimes=author.publishTimes+1)
+        Author.objects.filter(id=author_id).update(update_at=current_date_time, publish_times=author.publish_times + 1)
 
-        newBook = Book(
-            createAt=currentDateTime,
-            updateAt=currentDateTime,
+        new_book = Book(
+            create_at=current_date_time,
+            update_at=current_date_time,
             status=0,
             name=name,
-            bookType=bookType,
-            publishAt=publishAt,
+            book_type=book_type,
+            publish_at=publish_at,
             author=author,
             location=location,
         )
-        newBook.save()
-        return JsonResponse({'code': LibraryError.SUCCESSFUL.value, 'result': {'id': newBook.id }}, safe=False)
+        new_book.save()
+        return JsonResponse({'code': LibraryError.SUCCESSFUL.value, 'result': {'id': new_book.id}}, safe=False)
 
     elif request.method == 'GET':  # 取得所有書本
         books = list(Book.objects.filter(status=0).values())
-        return JsonResponse({'code': LibraryError.SUCCESSFUL.value, 'result': {'books': books }}, safe=False)
+        return JsonResponse({'code': LibraryError.SUCCESSFUL.value, 'result': {'books': books}}, safe=False)
 
     else:
-        return JsonResponse({'code': LibraryError.INVALID_API.value, 'message': 'Invalid api'}, status=HTTPStatus.BAD_REQUEST)
+        return JsonResponse({'code': LibraryError.INVALID_API.value, 'message': 'Invalid API'}, status=HTTPStatus.BAD_REQUEST)
 
 
-def deleteBook(request, bookId):
+def delete_book(request, book_id):
     if request.method == 'DELETE':  # 刪除書本
         now = timezone.now()
-        currentDateTime = now.strftime("%Y-%m-%d %H:%M:%S")
+        current_date_time = now.strftime("%Y-%m-%d %H:%M:%S")
 
         try:
-            book = Book.objects.get(id=bookId, status=0)
+            book = Book.objects.get(id=book_id, status=0)
         except ObjectDoesNotExist:
-            return JsonResponse({'code': LibraryError.INVALID_PARAMETER.value, 'error': f"bookId {bookId} not found"}, status=HTTPStatus.NOT_FOUND)
+            return JsonResponse({'code': LibraryError.INVALID_PARAMETER.value, 'error': f"book_id {book_id} not found"}, status=HTTPStatus.NOT_FOUND)
 
-        Author.objects.filter(id=book.author.id).update(updateAt=currentDateTime, publishTimes=book.author.publishTimes-1)
-        Book.objects.filter(id=bookId).update(updateAt=currentDateTime, status=9)
+        Author.objects.filter(id=book.author.id).update(update_at=current_date_time, publish_times=book.author.publish_times-1)
+        Book.objects.filter(id=book_id).update(update_at=current_date_time, status=9)
 
-        return JsonResponse({'code': LibraryError.SUCCESSFUL.value, 'message': f'bookId {bookId} deleted'}, safe=False)
+        return JsonResponse({'code': LibraryError.SUCCESSFUL.value, 'message': f'book_id {book_id} deleted'}, safe=False)
 
     else:
         return JsonResponse({'code': LibraryError.INVALID_API.value, 'message': 'Invalid api'}, status=HTTPStatus.BAD_REQUEST)
 
 
-
-def borrowBook(request, bookId, readerId):  # 借書
+def borrow_book(request, book_id, reader_id):  # 借書
     if request.method == 'POST':
         now = timezone.now()
-        currentDateTime = now.strftime("%Y-%m-%d %H:%M:%S")
+        current_date_time = now.strftime("%Y-%m-%d %H:%M:%S")
 
         try:
-            book = Book.objects.get(id=bookId, status=0)
+            book = Book.objects.get(id=book_id, status=0)
         except ObjectDoesNotExist:
-            return JsonResponse({'code': LibraryError.INVALID_PARAMETER.value, 'error': f"bookId {bookId} not found"}, status=HTTPStatus.NOT_FOUND)
+            return JsonResponse({'code': LibraryError.INVALID_PARAMETER.value, 'error': f"book_id {book_id} not found"}, status=HTTPStatus.NOT_FOUND)
 
         try:
-            reader = Reader.objects.get(id=readerId, status=0)
+            reader = Reader.objects.get(id=reader_id, status=0)
         except ObjectDoesNotExist:
-            return JsonResponse({'code': LibraryError.INVALID_PARAMETER.value, 'error': f"readerId {readerId} not found"}, status=HTTPStatus.NOT_FOUND)
+            return JsonResponse({'code': LibraryError.INVALID_PARAMETER.value, 'error': f"reader_id {reader_id} not found"}, status=HTTPStatus.NOT_FOUND)
 
-        Book.objects.filter(id=readerId).update(updateAt=currentDateTime, status=1)
-        Reader.objects.filter(id=readerId).update(updateAt=currentDateTime, borrowTimes=reader.borrowTimes+1)
+        Book.objects.filter(id=reader_id).update(update_at=current_date_time, status=1)
+        Reader.objects.filter(id=reader_id).update(update_at=current_date_time, borrow_times=reader.borrow_times+1)
 
-        newBorrow = Borrow(
-            createAt=currentDateTime,
-            updateAt=currentDateTime,
+        new_borrow = Borrow(
+            create_at=current_date_time,
+            update_at=current_date_time,
             status=0,
             book=book,
             reader=reader,
-            borrowAt=currentDateTime,
+            borrow_at=current_date_time,
             times=1,
         )
-        newBorrow.save()
-        return JsonResponse({'code': LibraryError.SUCCESSFUL.value, 'result': {'id': newBorrow.id }}, safe=False)
+        new_borrow.save()
+        return JsonResponse({'code': LibraryError.SUCCESSFUL.value, 'result': {'id': new_borrow.id }}, safe=False)
 
     else:
         return JsonResponse({'code': LibraryError.INVALID_API.value, 'message': 'Invalid api'}, status=HTTPStatus.BAD_REQUEST)
 
 
-
-def renewBook(request, bookId, readerId):  # 續借
+def renew_book(request, book_id, reader_id):  # 續借
     if request.method == 'POST':
         now = timezone.now()
-        currentDateTime = now.strftime("%Y-%m-%d %H:%M:%S")
+        current_date_time = now.strftime("%Y-%m-%d %H:%M:%S")
 
         try:
-            borrow = Borrow.objects.get(book_id=bookId, reader_id=readerId, status=0)
+            borrow = Borrow.objects.get(book_id=book_id, reader_id=reader_id, status=0)
         except ObjectDoesNotExist:
-            return JsonResponse({'code': LibraryError.INVALID_PARAMETER.value, 'error': f"borrow of bookId {bookId}, readerId {readerId} not found"}, status=HTTPStatus.NOT_FOUND)
+            return JsonResponse({'code': LibraryError.INVALID_PARAMETER.value, 'error': f"borrow of book_id {book_id}, reader_id {reader_id} not found"}, status=HTTPStatus.NOT_FOUND)
 
-        if borrow.times >= maxBorrowTimes: 
+        if borrow.times >= max_borrow_times: 
             return JsonResponse({'code': LibraryError.OVER_BORROW_TIMES_LIMIT.value, 'message': 'Can not borrow it any more'}, status=HTTPStatus.NOT_FOUND)
 
-        Borrow.objects.filter(id=borrow.id).update(updateAt=currentDateTime, times=borrow.times+1)
+        Borrow.objects.filter(id=borrow.id).update(update_at=current_date_time, times=borrow.times+1)
         return JsonResponse({'code': LibraryError.SUCCESSFUL.value, 'message': 'book renewal successful'}, safe=False)
 
     else:
         return JsonResponse({'code': LibraryError.INVALID_API.value, 'message': 'Invalid api'}, status=HTTPStatus.BAD_REQUEST)
 
-
-
-def returnBook(request, bookId, readerId):  # 續借
+def return_book(request, book_id, reader_id):  # 續借
     if request.method == 'POST':
         now = timezone.now()
-        currentDateTime = now.strftime("%Y-%m-%d %H:%M:%S")
+        current_date_time = now.strftime("%Y-%m-%d %H:%M:%S")
 
         try:
-            borrow = Borrow.objects.get(book_id=bookId, reader_id=readerId, status=0)
+            borrow = Borrow.objects.get(book_id=book_id, reader_id=reader_id, status=0)
         except ObjectDoesNotExist:
-            return JsonResponse({'code': LibraryError.INVALID_PARAMETER.value, 'error': f"borrow of bookId {bookId}, readerId {readerId} not found"}, status=HTTPStatus.NOT_FOUND)
+            return JsonResponse({'code': LibraryError.INVALID_PARAMETER.value, 'error': f"borrow of book_id {book_id}, reader_id {reader_id} not found"}, status=HTTPStatus.NOT_FOUND)
 
-        if borrow.borrowAt + timedelta(days=borrow.times*BorrowDays) < now:  # 逾期還書
-            reader = Reader.objects.get(id=readerId)
-            Reader.objects.filter(id=readerId).update(updateAt=currentDateTime, violationTimes=reader.violationTimes+1)
+        if borrow.borrow_at + timedelta(days=borrow.times * borrow_days) < now:  # 逾期還書
+            reader = Reader.objects.get(id=reader_id)
+            Reader.objects.filter(id=reader_id).update(update_at=current_date_time, violation_times=reader.violation_times + 1)
 
-        Borrow.objects.filter(id=borrow.id).update(updateAt=currentDateTime, returnAt=currentDateTime, status=9)
+        Borrow.objects.filter(id=borrow.id).update(update_at=current_date_time, return_at=current_date_time, status=9)
         return JsonResponse({'code': LibraryError.SUCCESSFUL.value, 'message': 'book return successful'}, safe=False)
 
     else:
         return JsonResponse({'code': LibraryError.INVALID_API.value, 'message': 'Invalid api'}, status=HTTPStatus.BAD_REQUEST)
 
 
-
-def createAndGetReport(request):
+def create_and_get_report(request):
     if request.method == 'POST':  # 新增心得
         body = json.loads(request.body)
-        bookId = body.get('bookId')
-        readerId = body.get('readerId')
+        book_id = body.get('bookId')
+        reader_id = body.get('readerId')
         content = body.get('content')
 
-        if not bookId:
-            return JsonResponse({'code': LibraryError.INSUFFICIENT_PARAMETER.value, 'message': 'should provide bookId'}, status=HTTPStatus.NOT_FOUND)
+        if not book_id:
+            return JsonResponse({'code': LibraryError.INSUFFICIENT_PARAMETER.value, 'message': 'should provide book_id'}, status=HTTPStatus.NOT_FOUND)
 
-        if not readerId:
-            return JsonResponse({'code': LibraryError.INSUFFICIENT_PARAMETER.value, 'message': 'should provide readerId'}, status=HTTPStatus.NOT_FOUND)
+        if not reader_id:
+            return JsonResponse({'code': LibraryError.INSUFFICIENT_PARAMETER.value, 'message': 'should provide reader_id'}, status=HTTPStatus.NOT_FOUND)
 
         if not content:
             return JsonResponse({'code': LibraryError.INSUFFICIENT_PARAMETER.value, 'message': 'should provide content'}, status=HTTPStatus.NOT_FOUND)
 
         now = timezone.now()
-        currentDateTime = now.strftime("%Y-%m-%d %H:%M:%S")
+        current_date_time = now.strftime("%Y-%m-%d %H:%M:%S")
 
         try:
-            book = Book.objects.get(id=bookId, status=0)
+            book = Book.objects.get(id=book_id, status=0)
         except ObjectDoesNotExist:
-            return JsonResponse({'code': LibraryError.INVALID_PARAMETER.value, 'error': f"bookId {bookId} not found"}, status=HTTPStatus.NOT_FOUND)
+            return JsonResponse({'code': LibraryError.INVALID_PARAMETER.value, 'error': f"book_id {book_id} not found"}, status=HTTPStatus.NOT_FOUND)
 
         try:
-            reader = Reader.objects.get(id=readerId, status=0)
+            reader = Reader.objects.get(id=reader_id, status=0)
         except ObjectDoesNotExist:
-            return JsonResponse({'code': LibraryError.INVALID_PARAMETER.value, 'error': f"readerId {readerId} not found"}, status=HTTPStatus.NOT_FOUND)
+            return JsonResponse({'code': LibraryError.INVALID_PARAMETER.value, 'error': f"reader_id {reader_id} not found"}, status=HTTPStatus.NOT_FOUND)
 
-        newReport = Report(
-            createAt=currentDateTime,
-            updateAt=currentDateTime,
+        new_report = Report(
+            create_at=current_date_time,
+            update_at=current_date_time,
             status=0,
             book=book,
             reader=reader,
             content=content
         )
-        newReport.save()
-        return JsonResponse({'code': LibraryError.SUCCESSFUL.value, 'result': {'id': newReport.id }}, safe=False)
+        new_report.save()
+        return JsonResponse({'code': LibraryError.SUCCESSFUL.value, 'result': {'id': new_report.id }}, safe=False)
 
     elif request.method == 'GET':  # 取得所有心得
         reports = list(Report.objects.filter(status=0).values())
@@ -417,7 +393,7 @@ def createAndGetReport(request):
         return JsonResponse({'code': LibraryError.INVALID_API.value, 'message': 'Invalid api'}, status=HTTPStatus.BAD_REQUEST)
 
 
-def updateAndDeleteReport(request, reportId):
+def update_and_delete_report(request, report_id):
     if request.method == 'PATCH':  # 刪除心得
         body = json.loads(request.body)
         content = body.get('content')
@@ -426,45 +402,43 @@ def updateAndDeleteReport(request, reportId):
             return JsonResponse({'code': LibraryError.INSUFFICIENT_PARAMETER.value, 'message': 'should provide content'}, status=HTTPStatus.NOT_FOUND)
 
         now = timezone.now()
-        currentDateTime = now.strftime("%Y-%m-%d %H:%M:%S")
+        current_date_time = now.strftime("%Y-%m-%d %H:%M:%S")
 
-        Report.objects.filter(id=reportId).update(updateAt=currentDateTime, content=content)
-        return JsonResponse({'code': LibraryError.SUCCESSFUL.value, 'message': f'reportId {reportId} updated'}, safe=False)
+        Report.objects.filter(id=report_id).update(update_at=current_date_time, content=content)
+        return JsonResponse({'code': LibraryError.SUCCESSFUL.value, 'message': f'report_id {report_id} updated'}, safe=False)
 
     elif request.method == 'DELETE':  # 刪除心得
         now = timezone.now()
-        currentDateTime = now.strftime("%Y-%m-%d %H:%M:%S")
+        current_date_time = now.strftime("%Y-%m-%d %H:%M:%S")
 
-        Report.objects.filter(id=reportId).update(updateAt=currentDateTime, status=9)
-        return JsonResponse({'code': LibraryError.SUCCESSFUL.value, 'message': f'reportId {reportId} deleted'}, safe=False)
+        Report.objects.filter(id=report_id).update(update_at=current_date_time, status=9)
+        return JsonResponse({'code': LibraryError.SUCCESSFUL.value, 'message': f'report_id {report_id} deleted'}, safe=False)
 
     else:
         return JsonResponse({'code': LibraryError.INVALID_API.value, 'message': 'Invalid api'}, status=HTTPStatus.BAD_REQUEST)
 
 
-
-def getRankOfBorrowTimes(request):
+def get_rank_of_borrow_times(request):
     if request.method == 'GET':  # 取得讀者借書次數排名
-        readers = list(Reader.objects.all().order_by('-borrowTimes').values())
+        readers = list(Reader.objects.all().order_by('-borrow_times').values())
         return JsonResponse({'code': LibraryError.SUCCESSFUL.value, 'result': {'readers': readers }}, safe=False)
 
     else:
         return JsonResponse({'code': LibraryError.INVALID_API.value, 'message': 'Invalid api'}, status=HTTPStatus.BAD_REQUEST)
 
 
-def getRankOfViolationTimes(request):
+def get_rank_of_violation_times(request):
     if request.method == 'GET':  # 取得讀者違規次數排名
-        readers = list(Reader.objects.all().order_by('-violationTimes').values())
+        readers = list(Reader.objects.all().order_by('-violation_times').values())
         return JsonResponse({'code': LibraryError.SUCCESSFUL.value, 'result': {'readers': readers }}, safe=False)
 
     else:
         return JsonResponse({'code': LibraryError.INVALID_API.value, 'message': 'Invalid api'}, status=HTTPStatus.BAD_REQUEST)
 
 
-
-def getRankOfPublishTimes(request):
+def get_rank_of_publish_times(request):
     if request.method == 'GET':  # 取得作者出版次數排名
-        authors = list(Author.objects.all().order_by('-publishTimes').values())
+        authors = list(Author.objects.all().order_by('-publish_times').values())
         return JsonResponse({'code': LibraryError.SUCCESSFUL.value, 'result': {'authors': authors }}, safe=False)
 
     else:
