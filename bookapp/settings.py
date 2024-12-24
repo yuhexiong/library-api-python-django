@@ -1,0 +1,2 @@
+MAX_BORROW_TIMES = 3  # 最多續借2次
+BORROW_DAYS = 30  # 一次借書30天

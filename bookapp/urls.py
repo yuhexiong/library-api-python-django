@@ -3,6 +3,10 @@ from bookapp.views import user as userView
 from bookapp.views import author as authorView
 from bookapp.views import reader as readerView
 from bookapp.views import book_type as bookTypeView
+from bookapp.views import book as bookView
+from bookapp.views import operation as operationView
+from bookapp.views import report as reportView
+from bookapp.views import rank as rankView
 
 urlpatterns = [
     # 使用者
@@ -22,20 +26,20 @@ urlpatterns = [
     path('book_type/<str:book_type_id>', bookTypeView.delete_book_type, name="delete_book_type"),
 
     # 書本
-    path('book', views.create_and_get_book, name="create_and_get_book"),
-    path('book/<str:book_id>', views.delete_book, name="delete_book"),
+    path('book', bookView.create_and_get_book, name="create_and_get_book"),
+    path('book/<str:book_id>', bookView.delete_book, name="delete_book"),
 
-    # 借書 續借 還書
-    path('borrow/<str:book_id>/<str:reader_id>', views.borrow_book, name="borrow_book"),
-    path('renew/<str:book_id>/<str:reader_id>', views.renew_book, name="renew_book"),
-    path('return/<str:book_id>/<str:reader_id>', views.return_book, name="return_book"),
+    # 操作
+    path('borrow/<str:book_id>/<str:reader_id>', operationView.borrow_book, name="borrow_book"),
+    path('renew/<str:book_id>/<str:reader_id>', operationView.renew_book, name="renew_book"),
+    path('return/<str:book_id>/<str:reader_id>', operationView.return_book, name="return_book"),
 
     # 心得
-    path('report', views.create_and_get_report, name="create_and_get_report"),
-    path('report/<str:report_id>', views.update_and_delete_report, name="update_and_delete_report"),
+    path('report', reportView.create_and_get_report, name="create_and_get_report"),
+    path('report/<str:report_id>', reportView.update_and_delete_report, name="update_and_delete_report"),
 
     # 排名
-    path('rank/borrow_times', views.get_rank_of_borrow_times, name="get_rank_of_borrow_times"),
-    path('rank/violation_times', views.get_rank_of_violation_times, name="get_rank_of_violation_times"),
-    path('rank/publish_times', views.get_rank_of_publish_times, name="get_rank_of_publish_times"),
+    path('rank/borrow_times', rankView.get_rank_of_borrow_times, name="get_rank_of_borrow_times"),
+    path('rank/violation_times', rankView.get_rank_of_violation_times, name="get_rank_of_violation_times"),
+    path('rank/publish_times', rankView.get_rank_of_publish_times, name="get_rank_of_publish_times"),
 ]
