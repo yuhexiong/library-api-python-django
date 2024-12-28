@@ -1,7 +1,5 @@
 import json
-from django.http import JsonResponse
-from http import HTTPStatus
-from bookapp.errors import LibraryCode
+from bookapp.responses import LibraryError, LibraryResponse
 from bookapp.utils import get_current_datetime, method_required
 from bookapp.models import Author, Reader, User
 
@@ -13,7 +11,10 @@ def create_and_get_user(request):
         name = body.get('name')
 
         if not name:
-            return JsonResponse({'code': LibraryCode.INSUFFICIENT_PARAMETER.value, 'message': 'should provide name'}, status=HTTPStatus.NOT_FOUND)
+            return LibraryError.to_json_response(
+                LibraryError.INSUFFICIENT_PARAMETER,
+                "Should provide name."
+            )
 
         current_datetime = get_current_datetime()
         new_user = User(
@@ -23,11 +24,11 @@ def create_and_get_user(request):
             name=name
         )
         new_user.save()
-        return JsonResponse({'code': LibraryCode.SUCCESSFUL.value, 'result': {'id': new_user.id}}, safe=False)
+        return LibraryResponse.to_json_response({'id': new_user.id})
 
     elif request.method == 'GET':  # 取得所有使用者
         users = list(User.objects.filter(status=0).values())
-        return JsonResponse({'code': LibraryCode.SUCCESSFUL.value, 'result': {'users': users}}, safe=False)
+        return LibraryResponse.to_json_response({'users': users})
 
 
 @method_required(['DELETE'])
@@ -38,4 +39,4 @@ def delete_user(request, user_id): # 刪除使用者
     Author.objects.filter(user_id=user_id).update(update_at=current_datetime, status=9)
     Reader.objects.filter(user_id=user_id).update(update_at=current_datetime, status=9)
 
-    return JsonResponse({'code': LibraryCode.SUCCESSFUL.value, 'message': f'user_id {user_id} deleted'}, safe=False)
+    return LibraryResponse.to_json_response({})

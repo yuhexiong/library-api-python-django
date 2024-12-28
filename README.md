@@ -90,10 +90,9 @@ python manage.py runserver
 
 ## Custom Error Code
 
-In bookapp/errors
+In bookapp/responses
 
 ```
-SUCCESSFUL = 0
 INVALID_API = 1001
 INVALID_PARAMETER = 1002
 INSUFFICIENT_PARAMETER = 1003

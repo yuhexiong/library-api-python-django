@@ -1,9 +1,6 @@
 import json
-from django.http import JsonResponse
-from http import HTTPStatus
-from django.utils import timezone
 from django.core.exceptions import ObjectDoesNotExist
-from bookapp.errors import LibraryCode
+from bookapp.responses import LibraryError, LibraryResponse
 from bookapp.utils import get_current_datetime, method_required
 from bookapp.models import Reader, User
 from bookapp.views import user as userView
@@ -18,7 +15,10 @@ def create_and_get_reader(request):  # 新增讀者
 
 
         if not user_id and not name:
-            return JsonResponse({'code': LibraryCode.INSUFFICIENT_PARAMETER.value, 'message': 'should provide user_id or name'}, status=HTTPStatus.NOT_FOUND)
+            return LibraryError.to_json_response(
+                LibraryError.INSUFFICIENT_PARAMETER,
+                "Should provide user_id or name."
+            )
 
         if not user_id:
             insert_user_result = userView.create_and_get_user(request)
@@ -27,7 +27,10 @@ def create_and_get_reader(request):  # 新增讀者
         try:
             user = User.objects.get(id=user_id, status=0)
         except ObjectDoesNotExist:
-            return JsonResponse({'code': LibraryCode.INVALID_PARAMETER.value, 'error': f"user_id {user_id} not found"}, status=HTTPStatus.NOT_FOUND)
+            return LibraryError.to_json_response(
+                LibraryError.INVALID_PARAMETER,
+                f"user_id {user_id} not found"
+            )
 
         current_datetime = get_current_datetime()
         new_reader = Reader(
@@ -39,11 +42,12 @@ def create_and_get_reader(request):  # 新增讀者
             violation_times=0,
         )
         new_reader.save()
-        return JsonResponse({'code': LibraryCode.SUCCESSFUL.value, 'result': {'id': new_reader.id}}, safe=False)
+        return LibraryResponse.to_json_response({'id': new_reader.id})
 
     elif request.method == 'GET':  # 取得所有讀者
         readers = list(Reader.objects.filter(status=0).values())
-        return JsonResponse({'code': LibraryCode.SUCCESSFUL.value, 'result': {'readers': readers}}, safe=False)
+
+        return LibraryResponse.to_json_response({'readers': readers})
 
 
 @method_required(['DELETE'])
@@ -51,4 +55,5 @@ def delete_reader(request, reader_id): # 刪除讀者
     current_datetime = get_current_datetime()
 
     Reader.objects.filter(id=reader_id).update(update_at=current_datetime, status=9)
-    return JsonResponse({'code': LibraryCode.SUCCESSFUL.value, 'message': f'reader_id {reader_id} deleted'}, safe=False)
+
+    return LibraryResponse.to_json_response({})
