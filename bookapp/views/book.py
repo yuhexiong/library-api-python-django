@@ -1,9 +1,10 @@
 import json
+
 from django.core.exceptions import ObjectDoesNotExist
+
+from bookapp.models import Author, Book, BookType
 from bookapp.responses import LibraryError, LibraryResponse
 from bookapp.utils import get_current_datetime, method_required
-from bookapp.models import Author, Book, BookType
-
 
 
 @method_required(['POST', 'GET'])
@@ -40,7 +41,8 @@ def create_and_get_book(request):  # 新增書本
                 f"author_id {author_id} not found"
             )
 
-        Author.objects.filter(id=author_id).update(update_at=current_datetime, publish_times=author.publish_times + 1)
+        Author.objects.filter(id=author_id).update(
+            update_at=current_datetime, publish_times=author.publish_times + 1)
 
         new_book = Book(
             create_at=current_datetime,
@@ -61,7 +63,7 @@ def create_and_get_book(request):  # 新增書本
 
 
 @method_required(['DELETE'])
-def delete_book(request, book_id): # 刪除書本
+def delete_book(request, book_id):  # 刪除書本
     current_datetime = get_current_datetime()
 
     try:
@@ -72,8 +74,9 @@ def delete_book(request, book_id): # 刪除書本
             f"book_id {book_id} not found"
         )
 
-    Author.objects.filter(id=book.author.id).update(update_at=current_datetime, publish_times=book.author.publish_times-1)
-    Book.objects.filter(id=book_id).update(update_at=current_datetime, status=9)
+    Author.objects.filter(id=book.author.id).update(
+        update_at=current_datetime, publish_times=book.author.publish_times-1)
+    Book.objects.filter(id=book_id).update(
+        update_at=current_datetime, status=9)
 
     return LibraryResponse.to_json_response({})
-

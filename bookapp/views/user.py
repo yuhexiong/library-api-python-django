@@ -1,7 +1,8 @@
 import json
+
+from bookapp.models import Author, Reader, User
 from bookapp.responses import LibraryError, LibraryResponse
 from bookapp.utils import get_current_datetime, method_required
-from bookapp.models import Author, Reader, User
 
 
 @method_required(['POST', 'GET'])
@@ -32,11 +33,14 @@ def create_and_get_user(request):
 
 
 @method_required(['DELETE'])
-def delete_user(request, user_id): # 刪除使用者
+def delete_user(request, user_id):  # 刪除使用者
     current_datetime = get_current_datetime()
-    
-    User.objects.filter(id=user_id).update(update_at=current_datetime, status=9)
-    Author.objects.filter(user_id=user_id).update(update_at=current_datetime, status=9)
-    Reader.objects.filter(user_id=user_id).update(update_at=current_datetime, status=9)
+
+    User.objects.filter(id=user_id).update(
+        update_at=current_datetime, status=9)
+    Author.objects.filter(user_id=user_id).update(
+        update_at=current_datetime, status=9)
+    Reader.objects.filter(user_id=user_id).update(
+        update_at=current_datetime, status=9)
 
     return LibraryResponse.to_json_response({})

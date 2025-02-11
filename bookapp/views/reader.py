@@ -1,9 +1,11 @@
 import json
+
 from django.core.exceptions import ObjectDoesNotExist
+
+from bookapp.models import Reader, User
 from bookapp.responses import LibraryError, LibraryResponse
 from bookapp.utils import get_current_datetime, method_required
-from bookapp.models import Reader, User
-from bookapp.views import user as userView
+from bookapp.views import user as user_view
 
 
 @method_required(['POST', 'GET'])
@@ -13,7 +15,6 @@ def create_and_get_reader(request):  # 新增讀者
         name = body.get('name')
         user_id = body.get('user_id')
 
-
         if not user_id and not name:
             return LibraryError.to_json_response(
                 LibraryError.INSUFFICIENT_PARAMETER,
@@ -21,8 +22,9 @@ def create_and_get_reader(request):  # 新增讀者
             )
 
         if not user_id:
-            insert_user_result = userView.create_and_get_user(request)
-            user_id = json.loads(insert_user_result.content.decode("utf-8"))["id"]
+            insert_user_result = user_view.create_and_get_user(request)
+            user_id = json.loads(
+                insert_user_result.content.decode("utf-8"))["id"]
 
         try:
             user = User.objects.get(id=user_id, status=0)
@@ -51,9 +53,10 @@ def create_and_get_reader(request):  # 新增讀者
 
 
 @method_required(['DELETE'])
-def delete_reader(request, reader_id): # 刪除讀者
+def delete_reader(request, reader_id):  # 刪除讀者
     current_datetime = get_current_datetime()
 
-    Reader.objects.filter(id=reader_id).update(update_at=current_datetime, status=9)
+    Reader.objects.filter(id=reader_id).update(
+        update_at=current_datetime, status=9)
 
     return LibraryResponse.to_json_response({})

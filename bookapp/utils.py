@@ -1,6 +1,9 @@
 from functools import wraps
+
 from django.utils import timezone
+
 from bookapp.responses import LibraryError
+
 
 def method_required(allowed_methods):
     def decorator(view_func):

@@ -1,8 +1,8 @@
 import json
+
+from bookapp.models import BookType
 from bookapp.responses import LibraryError, LibraryResponse
 from bookapp.utils import get_current_datetime, method_required
-from bookapp.models import BookType
-
 
 
 @method_required(['POST', 'GET'])
@@ -34,9 +34,9 @@ def create_and_get_book_type(request):  # 新增書本類型
 
 
 @method_required(['DELETE'])
-def delete_book_type(request, book_type_id): # 刪除書本類型
+def delete_book_type(request, book_type_id):  # 刪除書本類型
     current_datetime = get_current_datetime()
 
-    BookType.objects.filter(id=book_type_id).update(update_at=current_datetime, status=9)
+    BookType.objects.filter(id=book_type_id).update(
+        update_at=current_datetime, status=9)
     return LibraryResponse.to_json_response({})
-

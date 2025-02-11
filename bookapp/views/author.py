@@ -1,9 +1,11 @@
 import json
+
 from django.core.exceptions import ObjectDoesNotExist
-from bookapp.responses import LibraryError, LibraryResponse
-from bookapp.views import user as userView
-from bookapp.utils import get_current_datetime, method_required
+
 from bookapp.models import Author, User
+from bookapp.responses import LibraryError, LibraryResponse
+from bookapp.utils import get_current_datetime, method_required
+from bookapp.views import user as user_view
 
 
 @method_required(['POST', 'GET'])
@@ -12,7 +14,6 @@ def create_and_get_author(request):
         body = json.loads(request.body)
         name = body.get('name')
         user_id = body.get('user_id')
-
 
         if not user_id and not name:
             return LibraryError.to_json_response(
@@ -23,8 +24,9 @@ def create_and_get_author(request):
         if user_id:
             pass
         else:  # no user_id then create user by name
-            insert_user_result = userView.create_and_get_user(request)
-            user_id = json.loads(insert_user_result.content.decode("utf-8"))['result']['id']
+            insert_user_result = user_view.create_and_get_user(request)
+            user_id = json.loads(
+                insert_user_result.content.decode("utf-8"))['result']['id']
 
         try:
             user = User.objects.get(id=user_id, status=0)
@@ -33,7 +35,7 @@ def create_and_get_author(request):
                 LibraryError.INVALID_PARAMETER,
                 f"user_id {user_id} not found."
             )
-        
+
         current_datetime = get_current_datetime()
         new_author = Author(
             create_at=current_datetime,
@@ -51,8 +53,9 @@ def create_and_get_author(request):
 
 
 @method_required(['DELETE'])
-def delete_author(request, author_id): # 刪除作者
+def delete_author(request, author_id):  # 刪除作者
     current_datetime = get_current_datetime()
 
-    Author.objects.filter(id=author_id).update(update_at=current_datetime, status=9)
+    Author.objects.filter(id=author_id).update(
+        update_at=current_datetime, status=9)
     return LibraryResponse.to_json_response({})

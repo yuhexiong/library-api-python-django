@@ -1,8 +1,11 @@
 import json
+
 from django.core.exceptions import ObjectDoesNotExist
+
+from bookapp.models import Book, Reader, Report
 from bookapp.responses import LibraryError, LibraryResponse
 from bookapp.utils import get_current_datetime, method_required
-from bookapp.models import Book, Reader, Report
+
 
 @method_required(['POST', 'GET'])
 def create_and_get_report(request):
@@ -78,12 +81,13 @@ def update_and_delete_report(request, report_id):
 
         current_datetime = get_current_datetime()
 
-        Report.objects.filter(id=report_id).update(update_at=current_datetime, content=content)
+        Report.objects.filter(id=report_id).update(
+            update_at=current_datetime, content=content)
         return LibraryResponse.to_json_response({})
 
     elif request.method == 'DELETE':  # 刪除心得
         current_datetime = get_current_datetime()
 
-        Report.objects.filter(id=report_id).update(update_at=current_datetime, status=9)
+        Report.objects.filter(id=report_id).update(
+            update_at=current_datetime, status=9)
         return LibraryResponse.to_json_response({})
-
